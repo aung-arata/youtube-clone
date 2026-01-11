@@ -1,0 +1,36 @@
+package models
+
+import "time"
+
+type Video struct {
+	ID            int       `json:"id"`
+	Title         string    `json:"title"`
+	Description   string    `json:"description"`
+	URL           string    `json:"url"`
+	Thumbnail     string    `json:"thumbnail"`
+	ChannelName   string    `json:"channel_name"`
+	ChannelAvatar string    `json:"channel_avatar"`
+	Views         int       `json:"views"`
+	Duration      string    `json:"duration"`
+	UploadedAt    time.Time `json:"uploaded_at"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+type User struct {
+	ID        int       `json:"id"`
+	Username  string    `json:"username"`
+	Email     string    `json:"email"`
+	Avatar    string    `json:"avatar"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type Comment struct {
+	ID        int       `json:"id"`
+	VideoID   int       `json:"video_id"`
+	UserID    int       `json:"user_id"`
+	Content   string    `json:"content"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
