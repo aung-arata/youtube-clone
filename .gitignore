@@ -11,7 +11,8 @@ dist/
 build/
 *.exe
 *.out
-server
+/backend/server
+/server
 
 # Database
 postgres_data/
