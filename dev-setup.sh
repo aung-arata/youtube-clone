@@ -66,8 +66,15 @@ read -p "Do you want to seed the database with sample data? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo -e "${YELLOW}🌱 Seeding database...${NC}"
-    docker-compose exec -T postgres psql -U postgres -d youtube_clone < backend/seed.sql
-    echo -e "${GREEN}✅ Database seeded${NC}"
+    # Wait for migrations to complete
+    sleep 2
+    # Check if videos table exists
+    if docker-compose exec -T postgres psql -U postgres -d youtube_clone -c "\dt videos" | grep -q "videos"; then
+        docker-compose exec -T postgres psql -U postgres -d youtube_clone < backend/seed.sql
+        echo -e "${GREEN}✅ Database seeded${NC}"
+    else
+        echo -e "${RED}❌ Videos table not found. Please ensure migrations have run.${NC}"
+    fi
 fi
 
 # Ask user what they want to run

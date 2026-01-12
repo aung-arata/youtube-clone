@@ -17,6 +17,9 @@ var (
 )
 
 // RateLimitMiddleware limits requests per IP
+// NOTE: This implementation uses in-memory storage and is suitable for development
+// and single-instance deployments. For production with multiple instances,
+// consider using Redis or a distributed cache with TTL support.
 func RateLimitMiddleware(requestsPerMinute int) func(http.Handler) http.Handler {
 	// Clean up old visitors periodically
 	go cleanupVisitors()
