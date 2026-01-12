@@ -48,7 +48,7 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 	// Build query with optional search
 	query := `
 		SELECT id, title, description, url, thumbnail, channel_name, 
-		       channel_avatar, views, duration, uploaded_at, created_at, updated_at
+		       channel_avatar, views, likes, dislikes, duration, uploaded_at, created_at, updated_at
 		FROM videos
 	`
 	
@@ -74,7 +74,7 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var v models.Video
 		err := rows.Scan(&v.ID, &v.Title, &v.Description, &v.URL, &v.Thumbnail,
-			&v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Duration,
+			&v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes, &v.Duration,
 			&v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -102,14 +102,14 @@ func (h *VideoHandler) GetVideo(w http.ResponseWriter, r *http.Request) {
 
 	query := `
 		SELECT id, title, description, url, thumbnail, channel_name, 
-		       channel_avatar, views, duration, uploaded_at, created_at, updated_at
+		       channel_avatar, views, likes, dislikes, duration, uploaded_at, created_at, updated_at
 		FROM videos
 		WHERE id = $1
 	`
 
 	var v models.Video
 	err = h.db.QueryRow(query, id).Scan(&v.ID, &v.Title, &v.Description, &v.URL,
-		&v.Thumbnail, &v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Duration,
+		&v.Thumbnail, &v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes, &v.Duration,
 		&v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
 
 	if err == sql.ErrNoRows {
@@ -193,4 +193,64 @@ func (h *VideoHandler) IncrementViews(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]int{"views": views})
+}
+
+// LikeVideo increments the like count for a video
+func (h *VideoHandler) LikeVideo(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid video ID", http.StatusBadRequest)
+		return
+	}
+
+	query := `
+		UPDATE videos 
+		SET likes = likes + 1, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $1
+		RETURNING likes
+	`
+
+	var likes int
+	err = h.db.QueryRow(query, id).Scan(&likes)
+	if err == sql.ErrNoRows {
+		http.Error(w, "Video not found", http.StatusNotFound)
+		return
+	} else if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]int{"likes": likes})
+}
+
+// DislikeVideo increments the dislike count for a video
+func (h *VideoHandler) DislikeVideo(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid video ID", http.StatusBadRequest)
+		return
+	}
+
+	query := `
+		UPDATE videos 
+		SET dislikes = dislikes + 1, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $1
+		RETURNING dislikes
+	`
+
+	var dislikes int
+	err = h.db.QueryRow(query, id).Scan(&dislikes)
+	if err == sql.ErrNoRows {
+		http.Error(w, "Video not found", http.StatusNotFound)
+		return
+	} else if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]int{"dislikes": dislikes})
 }

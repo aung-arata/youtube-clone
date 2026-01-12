@@ -32,6 +32,16 @@ func main() {
 	api.HandleFunc("/videos/{id}", videoHandler.GetVideo).Methods("GET")
 	api.HandleFunc("/videos", videoHandler.CreateVideo).Methods("POST")
 	api.HandleFunc("/videos/{id}/views", videoHandler.IncrementViews).Methods("POST")
+	api.HandleFunc("/videos/{id}/like", videoHandler.LikeVideo).Methods("POST")
+	api.HandleFunc("/videos/{id}/dislike", videoHandler.DislikeVideo).Methods("POST")
+	
+	// Comment routes
+	commentHandler := handlers.NewCommentHandler(db)
+	api.HandleFunc("/videos/{videoId}/comments", commentHandler.GetComments).Methods("GET")
+	api.HandleFunc("/videos/{videoId}/comments", commentHandler.CreateComment).Methods("POST")
+	api.HandleFunc("/comments/{id}", commentHandler.GetComment).Methods("GET")
+	api.HandleFunc("/comments/{id}", commentHandler.UpdateComment).Methods("PUT")
+	api.HandleFunc("/comments/{id}", commentHandler.DeleteComment).Methods("DELETE")
 	
 	// Health check
 	api.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

@@ -11,6 +11,8 @@ type Video struct {
 	ChannelName   string    `json:"channel_name"`
 	ChannelAvatar string    `json:"channel_avatar"`
 	Views         int       `json:"views"`
+	Likes         int       `json:"likes"`
+	Dislikes      int       `json:"dislikes"`
 	Duration      string    `json:"duration"`
 	UploadedAt    time.Time `json:"uploaded_at"`
 	CreatedAt     time.Time `json:"created_at"`

@@ -60,6 +60,8 @@ func runMigrations(db *sql.DB) error {
 		channel_name VARCHAR(100) NOT NULL,
 		channel_avatar VARCHAR(500),
 		views INTEGER DEFAULT 0,
+		likes INTEGER DEFAULT 0,
+		dislikes INTEGER DEFAULT 0,
 		duration VARCHAR(20),
 		uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
