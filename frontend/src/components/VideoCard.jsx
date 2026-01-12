@@ -63,11 +63,11 @@ function VideoCard({ video }) {
           className="w-9 h-9 rounded-full"
         />
         <div className="flex-1">
-          <h3 className="font-semibold text-sm line-clamp-2 mb-1">
+          <h3 className="font-semibold text-sm line-clamp-2 mb-1 dark:text-gray-200">
             {video.title}
           </h3>
-          <p className="text-sm text-gray-600">{video.channel_name}</p>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">{video.channel_name}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             {formatViews(video.views)} • {formatTimeAgo(video.uploaded_at)}
           </p>
         </div>

@@ -41,7 +41,7 @@ const VideoGrid = forwardRef((props, ref) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">Loading videos...</div>
+        <div className="text-lg text-gray-600 dark:text-gray-400">Loading videos...</div>
       </div>
     )
   }
@@ -49,7 +49,7 @@ const VideoGrid = forwardRef((props, ref) => {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-red-600">Error: {error}</div>
+        <div className="text-lg text-red-600 dark:text-red-400">Error: {error}</div>
       </div>
     )
   }
@@ -57,7 +57,7 @@ const VideoGrid = forwardRef((props, ref) => {
   if (videos.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">No videos found</div>
+        <div className="text-lg text-gray-600 dark:text-gray-400">No videos found</div>
       </div>
     )
   }
