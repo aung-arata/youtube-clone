@@ -8,6 +8,7 @@ import (
 
 	"github.com/aung-arata/youtube-clone/backend/internal/database"
 	"github.com/aung-arata/youtube-clone/backend/internal/handlers"
+	"github.com/aung-arata/youtube-clone/backend/internal/middleware"
 	"github.com/gorilla/mux"
 )
 
@@ -30,6 +31,7 @@ func main() {
 	api.HandleFunc("/videos", videoHandler.GetVideos).Methods("GET")
 	api.HandleFunc("/videos/{id}", videoHandler.GetVideo).Methods("GET")
 	api.HandleFunc("/videos", videoHandler.CreateVideo).Methods("POST")
+	api.HandleFunc("/videos/{id}/views", videoHandler.IncrementViews).Methods("POST")
 	
 	// Health check
 	api.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +42,12 @@ func main() {
 
 	// Enable CORS
 	r.Use(corsMiddleware)
+	
+	// Add logging middleware
+	r.Use(middleware.LoggingMiddleware)
+	
+	// Add rate limiting middleware (100 requests per minute)
+	r.Use(middleware.RateLimitMiddleware(100))
 
 	// Get port from environment or use default
 	port := os.Getenv("PORT")

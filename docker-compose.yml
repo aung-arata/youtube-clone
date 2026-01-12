@@ -17,6 +17,47 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - youtube_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: youtube_clone_backend
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: youtube_clone
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - youtube_network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: youtube_clone_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - youtube_network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+
+networks:
+  youtube_network:
+    driver: bridge
+

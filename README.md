@@ -1,16 +1,44 @@
 # YouTube Clone
 
-A web-based YouTube clone built with React, Tailwind CSS, Golang, and PostgreSQL.
+A full-stack web-based YouTube clone built with React, Tailwind CSS, Golang, and PostgreSQL.
 
 ## Features
 
+### Core Features
 - 🎨 Modern UI with React and Tailwind CSS
 - 🚀 Fast backend API with Golang
 - 💾 PostgreSQL database for data persistence
 - 📱 Responsive design for all devices
 - 🎥 Video listing and playback
-- 🔍 Search functionality (UI ready)
-- 📊 Video management API
+- 🔍 Full-text search functionality
+- 📊 Video management API with CRUD operations
+- 👀 View count tracking
+- 📄 Pagination support for efficient data loading
+
+### Backend Features
+- ✅ Input validation and error handling
+- 🔒 Rate limiting middleware (100 requests/minute)
+- 📝 Request logging middleware
+- 🔎 Search videos by title, description, or channel name
+- 📈 View count increment API
+- 🧪 Comprehensive unit tests
+- 🐳 Docker support with multi-stage builds
+
+### Frontend Features
+- ⚡ Real-time API integration
+- 🔄 Loading states and error handling
+- 🎯 Dynamic video search
+- 📊 View count formatting (K, M)
+- ⏱️ Relative time display (e.g., "2 days ago")
+- 🎬 Video view tracking on click
+
+### DevOps & Code Quality
+- 🔄 CI/CD pipeline with GitHub Actions
+- 🐳 Full Docker Compose setup for all services
+- 📦 Multi-stage Docker builds for optimization
+- 🧪 Backend unit tests with sqlmock
+- 🔍 Linting configuration (golangci-lint)
+- 📋 Environment-based configuration
 
 ## Tech Stack
 
@@ -76,7 +104,7 @@ youtube-clone/
 
    Option A: Using Docker (recommended)
    ```bash
-   docker-compose up -d
+   docker-compose up -d postgres
    ```
 
    Option B: Using local PostgreSQL
@@ -106,6 +134,9 @@ youtube-clone/
    ```bash
    cd frontend
    
+   # Copy environment file (optional)
+   cp .env.example .env
+   
    # Install dependencies
    npm install
    
@@ -114,6 +145,29 @@ youtube-clone/
    ```
 
    The frontend will start on `http://localhost:3000`
+
+### Using Docker Compose (Recommended)
+
+Run the entire stack with a single command:
+
+```bash
+# Build and start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+
+# Rebuild and restart
+docker-compose up -d --build
+```
+
+Services:
+- Frontend: http://localhost:80
+- Backend API: http://localhost:8080
+- PostgreSQL: localhost:5432
 
 ### Building for Production
 
@@ -137,8 +191,13 @@ go build -o server cmd/server/main.go
 ### Videos
 
 - `GET /api/videos` - Get all videos
+  - Query Parameters:
+    - `q` (optional): Search query for title, description, or channel name
+    - `page` (optional): Page number (default: 1)
+    - `limit` (optional): Items per page (default: 20, max: 100)
 - `GET /api/videos/{id}` - Get a specific video
 - `POST /api/videos` - Create a new video
+- `POST /api/videos/{id}/views` - Increment view count
 - `GET /api/health` - Health check endpoint
 
 ### Example API Usage
@@ -146,6 +205,16 @@ go build -o server cmd/server/main.go
 **Get all videos:**
 ```bash
 curl http://localhost:8080/api/videos
+```
+
+**Search videos:**
+```bash
+curl "http://localhost:8080/api/videos?q=react&page=1&limit=10"
+```
+
+**Get a specific video:**
+```bash
+curl http://localhost:8080/api/videos/1
 ```
 
 **Create a new video:**
@@ -161,6 +230,11 @@ curl -X POST http://localhost:8080/api/videos \
     "channel_avatar": "https://example.com/avatar.jpg",
     "duration": "10:30"
   }'
+```
+
+**Increment video views:**
+```bash
+curl -X POST http://localhost:8080/api/videos/1/views
 ```
 
 ## Database Schema
@@ -223,18 +297,54 @@ cd backend
 go run cmd/server/main.go  # Run server
 go build ./...             # Build all packages
 go test ./...              # Run tests
+go test -v -race -coverprofile=coverage.out ./...  # Run tests with coverage
 ```
+
+### Testing
+
+**Backend Tests:**
+```bash
+cd backend
+go test -v ./...                    # Run all tests
+go test -v ./internal/handlers/...  # Run specific package tests
+go test -race ./...                 # Run tests with race detection
+go test -cover ./...                # Run tests with coverage
+```
+
+**Linting:**
+```bash
+cd backend
+golangci-lint run  # Run Go linter
+```
+
+### Code Quality
+
+The project includes:
+- Backend unit tests with `go-sqlmock` for database mocking
+- CI/CD pipeline with GitHub Actions
+- Automatic linting and testing on pull requests
+- Code coverage reporting
+- Docker builds for all services
 
 ## Environment Variables
 
 ### Backend (.env)
 ```env
+# Database Configuration
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=postgres
 DB_NAME=youtube_clone
+
+# Server Configuration
 PORT=8080
+```
+
+### Frontend (.env)
+```env
+# API Configuration
+VITE_API_URL=http://localhost:8080
 ```
 
 ## Contributing
@@ -257,13 +367,36 @@ This project is licensed under the ISC License.
 
 ## Future Enhancements
 
-- [ ] User authentication and authorization
-- [ ] Video upload functionality
-- [ ] Comments system
-- [ ] Like/dislike feature
-- [ ] Subscription system
-- [ ] Search functionality implementation
-- [ ] Video recommendations
+### Completed ✅
+- [x] Input validation and error handling
+- [x] Search functionality implementation
+- [x] View count increment
+- [x] Pagination support
+- [x] Request logging middleware
+- [x] Rate limiting middleware
+- [x] Backend unit tests
+- [x] CI/CD pipeline
+- [x] Docker containerization
+- [x] Frontend API integration
+- [x] Loading states and error handling
+
+### Planned 🚀
+- [ ] User authentication and authorization (JWT-based)
+- [ ] Comments system with full CRUD operations
+- [ ] Like/dislike functionality for videos
+- [ ] Video upload functionality with file handling
+- [ ] Subscription system for channels
+- [ ] User profile pages
+- [ ] Video watch history tracking
 - [ ] Playlist management
-- [ ] Video analytics
+- [ ] Video recommendations algorithm
+- [ ] Dark mode support
+- [ ] Video categories and filtering
+- [ ] Frontend component tests
+- [ ] API integration tests
+- [ ] HTTPS support and security headers
+- [ ] Comprehensive API documentation (Swagger/OpenAPI)
+- [ ] Database connection pooling optimization
+- [ ] Database migration versioning system
+
 
