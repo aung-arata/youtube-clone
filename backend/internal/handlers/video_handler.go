@@ -20,10 +20,11 @@ func NewVideoHandler(db *sql.DB) *VideoHandler {
 	return &VideoHandler{db: db}
 }
 
-// GetVideos returns all videos with optional search and pagination
+// GetVideos returns all videos with optional search, category filter and pagination
 func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 	// Parse query parameters
 	searchQuery := r.URL.Query().Get("q")
+	category := r.URL.Query().Get("category")
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")
 
@@ -45,23 +46,35 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 
 	offset := (page - 1) * limit
 
-	// Build query with optional search
+	// Build query with optional search and category filter
 	query := `
 		SELECT id, title, description, url, thumbnail, channel_name, 
-		       channel_avatar, views, likes, dislikes, duration, uploaded_at, created_at, updated_at
+		       channel_avatar, views, likes, dislikes, category, duration, uploaded_at, created_at, updated_at
 		FROM videos
 	`
 	
 	var args []interface{}
+	var conditions []string
+	argIndex := 1
+
 	if searchQuery != "" {
-		query += ` WHERE title ILIKE $1 OR description ILIKE $1 OR channel_name ILIKE $1`
+		conditions = append(conditions, fmt.Sprintf("(title ILIKE $%d OR description ILIKE $%d OR channel_name ILIKE $%d)", argIndex, argIndex, argIndex))
 		args = append(args, "%"+searchQuery+"%")
-		query += fmt.Sprintf(` ORDER BY uploaded_at DESC LIMIT $2 OFFSET $3`)
-		args = append(args, limit, offset)
-	} else {
-		query += fmt.Sprintf(` ORDER BY uploaded_at DESC LIMIT $1 OFFSET $2`)
-		args = append(args, limit, offset)
+		argIndex++
 	}
+
+	if category != "" {
+		conditions = append(conditions, fmt.Sprintf("category = $%d", argIndex))
+		args = append(args, category)
+		argIndex++
+	}
+
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	query += fmt.Sprintf(` ORDER BY uploaded_at DESC LIMIT $%d OFFSET $%d`, argIndex, argIndex+1)
+	args = append(args, limit, offset)
 
 	rows, err := h.db.Query(query, args...)
 	if err != nil {
@@ -74,7 +87,7 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var v models.Video
 		err := rows.Scan(&v.ID, &v.Title, &v.Description, &v.URL, &v.Thumbnail,
-			&v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes, &v.Duration,
+			&v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes, &v.Category, &v.Duration,
 			&v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -102,14 +115,14 @@ func (h *VideoHandler) GetVideo(w http.ResponseWriter, r *http.Request) {
 
 	query := `
 		SELECT id, title, description, url, thumbnail, channel_name, 
-		       channel_avatar, views, likes, dislikes, duration, uploaded_at, created_at, updated_at
+		       channel_avatar, views, likes, dislikes, category, duration, uploaded_at, created_at, updated_at
 		FROM videos
 		WHERE id = $1
 	`
 
 	var v models.Video
 	err = h.db.QueryRow(query, id).Scan(&v.ID, &v.Title, &v.Description, &v.URL,
-		&v.Thumbnail, &v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes, &v.Duration,
+		&v.Thumbnail, &v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes, &v.Category, &v.Duration,
 		&v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
 
 	if err == sql.ErrNoRows {
@@ -253,4 +266,38 @@ func (h *VideoHandler) DislikeVideo(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]int{"dislikes": dislikes})
+}
+
+// GetCategories returns all unique video categories
+func (h *VideoHandler) GetCategories(w http.ResponseWriter, r *http.Request) {
+query := `
+SELECT DISTINCT category 
+FROM videos 
+WHERE category IS NOT NULL AND category != ''
+ORDER BY category
+`
+
+rows, err := h.db.Query(query)
+if err != nil {
+http.Error(w, err.Error(), http.StatusInternalServerError)
+return
+}
+defer rows.Close()
+
+var categories []string
+for rows.Next() {
+var category string
+if err := rows.Scan(&category); err != nil {
+http.Error(w, err.Error(), http.StatusInternalServerError)
+return
+}
+categories = append(categories, category)
+}
+
+if categories == nil {
+categories = []string{}
+}
+
+w.Header().Set("Content-Type", "application/json")
+json.NewEncoder(w).Encode(categories)
 }

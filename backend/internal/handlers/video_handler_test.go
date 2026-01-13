@@ -26,12 +26,12 @@ func TestGetVideos(t *testing.T) {
 	now := time.Now()
 	rows := sqlmock.NewRows([]string{
 		"id", "title", "description", "url", "thumbnail",
-		"channel_name", "channel_avatar", "views", "likes", "dislikes", "duration",
+		"channel_name", "channel_avatar", "views", "likes", "dislikes", "category", "duration",
 		"uploaded_at", "created_at", "updated_at",
 	}).AddRow(
 		1, "Test Video", "Test Description", "http://example.com/video.mp4",
 		"http://example.com/thumb.jpg", "Test Channel", "http://example.com/avatar.jpg",
-		100, 0, 0, "10:00", now, now, now,
+		100, 0, 0, "General", "10:00", now, now, now,
 	)
 
 	mock.ExpectQuery("SELECT (.+) FROM videos ORDER BY uploaded_at DESC LIMIT (.+) OFFSET (.+)").
@@ -153,12 +153,12 @@ func TestGetVideo_Success(t *testing.T) {
 	now := time.Now()
 	rows := sqlmock.NewRows([]string{
 		"id", "title", "description", "url", "thumbnail",
-		"channel_name", "channel_avatar", "views", "likes", "dislikes", "duration",
+		"channel_name", "channel_avatar", "views", "likes", "dislikes", "category", "duration",
 		"uploaded_at", "created_at", "updated_at",
 	}).AddRow(
 		1, "Test Video", "Test Description", "http://example.com/video.mp4",
 		"http://example.com/thumb.jpg", "Test Channel", "http://example.com/avatar.jpg",
-		100, 0, 0, "10:00", now, now, now,
+		100, 0, 0, "General", "10:00", now, now, now,
 	)
 
 	mock.ExpectQuery("SELECT (.+) FROM videos WHERE id = (.+)").WithArgs(1).WillReturnRows(rows)

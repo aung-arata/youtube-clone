@@ -29,6 +29,7 @@ func main() {
 	// Video routes
 	videoHandler := handlers.NewVideoHandler(db)
 	api.HandleFunc("/videos", videoHandler.GetVideos).Methods("GET")
+	api.HandleFunc("/videos/categories", videoHandler.GetCategories).Methods("GET")
 	api.HandleFunc("/videos/{id}", videoHandler.GetVideo).Methods("GET")
 	api.HandleFunc("/videos", videoHandler.CreateVideo).Methods("POST")
 	api.HandleFunc("/videos/{id}/views", videoHandler.IncrementViews).Methods("POST")
@@ -42,6 +43,17 @@ func main() {
 	api.HandleFunc("/comments/{id}", commentHandler.GetComment).Methods("GET")
 	api.HandleFunc("/comments/{id}", commentHandler.UpdateComment).Methods("PUT")
 	api.HandleFunc("/comments/{id}", commentHandler.DeleteComment).Methods("DELETE")
+
+	// User routes
+	userHandler := handlers.NewUserHandler(db)
+	api.HandleFunc("/users", userHandler.CreateUser).Methods("POST")
+	api.HandleFunc("/users/{id}", userHandler.GetUser).Methods("GET")
+	api.HandleFunc("/users/{id}", userHandler.UpdateUser).Methods("PUT")
+
+	// Watch history routes
+	historyHandler := handlers.NewHistoryHandler(db)
+	api.HandleFunc("/users/{userId}/history", historyHandler.AddToHistory).Methods("POST")
+	api.HandleFunc("/users/{userId}/history", historyHandler.GetHistory).Methods("GET")
 	
 	// Health check
 	api.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
