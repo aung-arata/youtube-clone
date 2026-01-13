@@ -33,8 +33,19 @@ function VideoCard({ video }) {
       await fetch(`${apiUrl}/api/videos/${video.id}/views`, {
         method: 'POST',
       })
+      
+      // Add to watch history (assuming userId = 1 for demo)
+      // In a real app, this would come from authentication context
+      const userId = 1
+      await fetch(`${apiUrl}/api/users/${userId}/history`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ video_id: video.id })
+      })
     } catch (err) {
-      console.error('Error incrementing views:', err)
+      console.error('Error tracking video interaction:', err)
     }
   }
 
