@@ -17,6 +17,9 @@ A full-stack web-based YouTube clone built with React, Tailwind CSS, Golang, and
 - 💬 Comments system with full CRUD operations
 - 👍 Like/dislike functionality for videos
 - 🌙 Dark mode support with theme persistence
+- 🏷️ Video categories and filtering
+- 👤 User profiles with edit functionality
+- 📜 Watch history tracking
 
 ### Backend Features
 - ✅ Input validation and error handling
@@ -26,6 +29,9 @@ A full-stack web-based YouTube clone built with React, Tailwind CSS, Golang, and
 - 📈 View count increment API
 - 👍 Like/dislike API endpoints
 - 💬 Comment management API (Create, Read, Update, Delete)
+- 👤 User profile API (Create, Read, Update)
+- 📜 Watch history API with pagination
+- 🏷️ Category filtering and management
 - 🧪 Comprehensive unit tests
 - 🐳 Docker support with multi-stage builds
 
@@ -38,6 +44,9 @@ A full-stack web-based YouTube clone built with React, Tailwind CSS, Golang, and
 - 🎬 Video view tracking on click
 - 🌙 Dark mode toggle with localStorage persistence
 - 🎨 Dark mode styling across all components
+- 🏷️ Category filter with horizontal scroll
+- 👤 User profile management component
+- 📜 Watch history component and tracking
 
 ### DevOps & Code Quality
 - 🔄 CI/CD pipeline with GitHub Actions
@@ -200,8 +209,10 @@ go build -o server cmd/server/main.go
 - `GET /api/videos` - Get all videos
   - Query Parameters:
     - `q` (optional): Search query for title, description, or channel name
+    - `category` (optional): Filter by category
     - `page` (optional): Page number (default: 1)
     - `limit` (optional): Items per page (default: 20, max: 100)
+- `GET /api/videos/categories` - Get all unique video categories
 - `GET /api/videos/{id}` - Get a specific video
 - `POST /api/videos` - Create a new video
 - `POST /api/videos/{id}/views` - Increment view count
@@ -215,6 +226,20 @@ go build -o server cmd/server/main.go
 - `GET /api/comments/{id}` - Get a specific comment
 - `PUT /api/comments/{id}` - Update a comment
 - `DELETE /api/comments/{id}` - Delete a comment
+
+### Users
+
+- `POST /api/users` - Create a new user
+- `GET /api/users/{id}` - Get user profile
+- `PUT /api/users/{id}` - Update user profile
+
+### Watch History
+
+- `POST /api/users/{userId}/history` - Add video to watch history
+- `GET /api/users/{userId}/history` - Get user's watch history
+  - Query Parameters:
+    - `page` (optional): Page number (default: 1)
+    - `limit` (optional): Items per page (default: 20, max: 100)
 
 ### System
 
@@ -296,6 +321,46 @@ curl -X PUT http://localhost:8080/api/comments/1 \
 curl -X DELETE http://localhost:8080/api/comments/1
 ```
 
+**Filter videos by category:**
+```bash
+curl "http://localhost:8080/api/videos?category=Education"
+```
+
+**Get all categories:**
+```bash
+curl http://localhost:8080/api/videos/categories
+```
+
+**Create a user:**
+```bash
+curl -X POST http://localhost:8080/api/users \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "johndoe",
+    "email": "john@example.com",
+    "avatar": "https://example.com/avatar.jpg"
+  }'
+```
+
+**Get user profile:**
+```bash
+curl http://localhost:8080/api/users/1
+```
+
+**Add video to watch history:**
+```bash
+curl -X POST http://localhost:8080/api/users/1/history \
+  -H "Content-Type: application/json" \
+  -d '{
+    "video_id": 5
+  }'
+```
+
+**Get watch history:**
+```bash
+curl http://localhost:8080/api/users/1/history
+```
+
 For more detailed API documentation, see [API.md](API.md).
 
 ## Database Schema
@@ -313,6 +378,7 @@ CREATE TABLE videos (
     views INTEGER DEFAULT 0,
     likes INTEGER DEFAULT 0,
     dislikes INTEGER DEFAULT 0,
+    category VARCHAR(50) DEFAULT 'General',
     duration VARCHAR(20),
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -333,6 +399,27 @@ CREATE TABLE users (
 ```
 
 ### Comments Table
+```sql
+CREATE TABLE comments (
+    id SERIAL PRIMARY KEY,
+    video_id INTEGER REFERENCES videos(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Watch History Table
+```sql
+CREATE TABLE watch_history (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    video_id INTEGER REFERENCES videos(id) ON DELETE CASCADE,
+    watched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, video_id)
+);
+```
 ```sql
 CREATE TABLE comments (
     id SERIAL PRIMARY KEY,
@@ -445,16 +532,16 @@ This project is licensed under the ISC License.
 - [x] Comments system with full CRUD operations
 - [x] Like/dislike functionality for videos
 - [x] Dark mode support
+- [x] Video categories and filtering
+- [x] User profile pages
+- [x] Video watch history tracking
 
 ### Planned 🚀
 - [ ] User authentication and authorization (JWT-based)
 - [ ] Video upload functionality with file handling
 - [ ] Subscription system for channels
-- [ ] User profile pages
-- [ ] Video watch history tracking
 - [ ] Playlist management
 - [ ] Video recommendations algorithm
-- [ ] Video categories and filtering
 - [ ] Frontend component tests
 - [ ] API integration tests
 - [ ] HTTPS support and security headers
