@@ -34,8 +34,9 @@ function VideoCard({ video }) {
         method: 'POST',
       })
       
-      // Add to watch history (assuming userId = 1 for demo)
-      // In a real app, this would come from authentication context
+      // Add to watch history
+      // TODO: Replace hardcoded userId with actual authenticated user from context
+      // For demo purposes, using userId = 1
       const userId = 1
       await fetch(`${apiUrl}/api/users/${userId}/history`, {
         method: 'POST',

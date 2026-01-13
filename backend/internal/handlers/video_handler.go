@@ -270,34 +270,34 @@ func (h *VideoHandler) DislikeVideo(w http.ResponseWriter, r *http.Request) {
 
 // GetCategories returns all unique video categories
 func (h *VideoHandler) GetCategories(w http.ResponseWriter, r *http.Request) {
-query := `
-SELECT DISTINCT category 
-FROM videos 
-WHERE category IS NOT NULL AND category != ''
-ORDER BY category
-`
+	query := `
+		SELECT DISTINCT category 
+		FROM videos 
+		WHERE category IS NOT NULL AND category != ''
+		ORDER BY category
+	`
 
-rows, err := h.db.Query(query)
-if err != nil {
-http.Error(w, err.Error(), http.StatusInternalServerError)
-return
-}
-defer rows.Close()
+	rows, err := h.db.Query(query)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
 
-var categories []string
-for rows.Next() {
-var category string
-if err := rows.Scan(&category); err != nil {
-http.Error(w, err.Error(), http.StatusInternalServerError)
-return
-}
-categories = append(categories, category)
-}
+	var categories []string
+	for rows.Next() {
+		var category string
+		if err := rows.Scan(&category); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		categories = append(categories, category)
+	}
 
-if categories == nil {
-categories = []string{}
-}
+	if categories == nil {
+		categories = []string{}
+	}
 
-w.Header().Set("Content-Type", "application/json")
-json.NewEncoder(w).Encode(categories)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(categories)
 }
