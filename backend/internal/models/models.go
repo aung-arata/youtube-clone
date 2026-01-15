@@ -11,6 +11,9 @@ type Video struct {
 	ChannelName   string    `json:"channel_name"`
 	ChannelAvatar string    `json:"channel_avatar"`
 	Views         int       `json:"views"`
+	Likes         int       `json:"likes"`
+	Dislikes      int       `json:"dislikes"`
+	Category      string    `json:"category"`
 	Duration      string    `json:"duration"`
 	UploadedAt    time.Time `json:"uploaded_at"`
 	CreatedAt     time.Time `json:"created_at"`
@@ -33,4 +36,11 @@ type Comment struct {
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type WatchHistory struct {
+	ID        int       `json:"id"`
+	UserID    int       `json:"user_id"`
+	VideoID   int       `json:"video_id"`
+	WatchedAt time.Time `json:"watched_at"`
 }

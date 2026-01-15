@@ -33,8 +33,20 @@ function VideoCard({ video }) {
       await fetch(`${apiUrl}/api/videos/${video.id}/views`, {
         method: 'POST',
       })
+      
+      // Add to watch history
+      // TODO: Replace hardcoded userId with actual authenticated user from context
+      // For demo purposes, using userId = 1
+      const userId = 1
+      await fetch(`${apiUrl}/api/users/${userId}/history`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ video_id: video.id })
+      })
     } catch (err) {
-      console.error('Error incrementing views:', err)
+      console.error('Error tracking video interaction:', err)
     }
   }
 
@@ -63,11 +75,11 @@ function VideoCard({ video }) {
           className="w-9 h-9 rounded-full"
         />
         <div className="flex-1">
-          <h3 className="font-semibold text-sm line-clamp-2 mb-1">
+          <h3 className="font-semibold text-sm line-clamp-2 mb-1 dark:text-gray-200">
             {video.title}
           </h3>
-          <p className="text-sm text-gray-600">{video.channel_name}</p>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">{video.channel_name}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             {formatViews(video.views)} • {formatTimeAgo(video.uploaded_at)}
           </p>
         </div>

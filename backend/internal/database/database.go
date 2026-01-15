@@ -60,6 +60,9 @@ func runMigrations(db *sql.DB) error {
 		channel_name VARCHAR(100) NOT NULL,
 		channel_avatar VARCHAR(500),
 		views INTEGER DEFAULT 0,
+		likes INTEGER DEFAULT 0,
+		dislikes INTEGER DEFAULT 0,
+		category VARCHAR(50) DEFAULT 'General',
 		duration VARCHAR(20),
 		uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -71,6 +74,7 @@ func runMigrations(db *sql.DB) error {
 	CREATE INDEX IF NOT EXISTS idx_videos_description ON videos USING gin(to_tsvector('english', description));
 	CREATE INDEX IF NOT EXISTS idx_videos_channel_name ON videos (channel_name);
 	CREATE INDEX IF NOT EXISTS idx_videos_uploaded_at ON videos (uploaded_at DESC);
+	CREATE INDEX IF NOT EXISTS idx_videos_category ON videos (category);
 
 	CREATE TABLE IF NOT EXISTS users (
 		id SERIAL PRIMARY KEY,
@@ -89,6 +93,17 @@ func runMigrations(db *sql.DB) error {
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
+
+	CREATE TABLE IF NOT EXISTS watch_history (
+		id SERIAL PRIMARY KEY,
+		user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+		video_id INTEGER REFERENCES videos(id) ON DELETE CASCADE,
+		watched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		UNIQUE(user_id, video_id)
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_watch_history_user_id ON watch_history (user_id);
+	CREATE INDEX IF NOT EXISTS idx_watch_history_watched_at ON watch_history (watched_at DESC);
 	`
 
 	_, err := db.Exec(query)

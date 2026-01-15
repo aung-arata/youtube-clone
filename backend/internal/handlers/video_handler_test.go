@@ -26,12 +26,12 @@ func TestGetVideos(t *testing.T) {
 	now := time.Now()
 	rows := sqlmock.NewRows([]string{
 		"id", "title", "description", "url", "thumbnail",
-		"channel_name", "channel_avatar", "views", "duration",
+		"channel_name", "channel_avatar", "views", "likes", "dislikes", "category", "duration",
 		"uploaded_at", "created_at", "updated_at",
 	}).AddRow(
 		1, "Test Video", "Test Description", "http://example.com/video.mp4",
 		"http://example.com/thumb.jpg", "Test Channel", "http://example.com/avatar.jpg",
-		100, "10:00", now, now, now,
+		100, 0, 0, "General", "10:00", now, now, now,
 	)
 
 	mock.ExpectQuery("SELECT (.+) FROM videos ORDER BY uploaded_at DESC LIMIT (.+) OFFSET (.+)").
@@ -153,12 +153,12 @@ func TestGetVideo_Success(t *testing.T) {
 	now := time.Now()
 	rows := sqlmock.NewRows([]string{
 		"id", "title", "description", "url", "thumbnail",
-		"channel_name", "channel_avatar", "views", "duration",
+		"channel_name", "channel_avatar", "views", "likes", "dislikes", "category", "duration",
 		"uploaded_at", "created_at", "updated_at",
 	}).AddRow(
 		1, "Test Video", "Test Description", "http://example.com/video.mp4",
 		"http://example.com/thumb.jpg", "Test Channel", "http://example.com/avatar.jpg",
-		100, "10:00", now, now, now,
+		100, 0, 0, "General", "10:00", now, now, now,
 	)
 
 	mock.ExpectQuery("SELECT (.+) FROM videos WHERE id = (.+)").WithArgs(1).WillReturnRows(rows)
@@ -244,4 +244,86 @@ func TestIncrementViews_Success(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Unfulfilled expectations: %v", err)
 	}
+}
+
+func TestLikeVideo_Success(t *testing.T) {
+db, mock, err := sqlmock.New()
+if err != nil {
+t.Fatalf("Failed to create mock database: %v", err)
+}
+defer db.Close()
+
+handler := NewVideoHandler(db)
+
+rows := sqlmock.NewRows([]string{"likes"}).AddRow(10)
+
+mock.ExpectQuery("UPDATE videos SET likes").WithArgs(1).WillReturnRows(rows)
+
+req, err := http.NewRequest("POST", "/api/videos/1/like", nil)
+if err != nil {
+t.Fatal(err)
+}
+
+rr := httptest.NewRecorder()
+router := mux.NewRouter()
+router.HandleFunc("/api/videos/{id}/like", handler.LikeVideo)
+router.ServeHTTP(rr, req)
+
+if status := rr.Code; status != http.StatusOK {
+t.Errorf("Handler returned wrong status code: got %v want %v", status, http.StatusOK)
+}
+
+var result map[string]int
+if err := json.NewDecoder(rr.Body).Decode(&result); err != nil {
+t.Errorf("Failed to decode response: %v", err)
+}
+
+if result["likes"] != 10 {
+t.Errorf("Expected 10 likes, got %d", result["likes"])
+}
+
+if err := mock.ExpectationsWereMet(); err != nil {
+t.Errorf("Unfulfilled expectations: %v", err)
+}
+}
+
+func TestDislikeVideo_Success(t *testing.T) {
+db, mock, err := sqlmock.New()
+if err != nil {
+t.Fatalf("Failed to create mock database: %v", err)
+}
+defer db.Close()
+
+handler := NewVideoHandler(db)
+
+rows := sqlmock.NewRows([]string{"dislikes"}).AddRow(3)
+
+mock.ExpectQuery("UPDATE videos SET dislikes").WithArgs(1).WillReturnRows(rows)
+
+req, err := http.NewRequest("POST", "/api/videos/1/dislike", nil)
+if err != nil {
+t.Fatal(err)
+}
+
+rr := httptest.NewRecorder()
+router := mux.NewRouter()
+router.HandleFunc("/api/videos/{id}/dislike", handler.DislikeVideo)
+router.ServeHTTP(rr, req)
+
+if status := rr.Code; status != http.StatusOK {
+t.Errorf("Handler returned wrong status code: got %v want %v", status, http.StatusOK)
+}
+
+var result map[string]int
+if err := json.NewDecoder(rr.Body).Decode(&result); err != nil {
+t.Errorf("Failed to decode response: %v", err)
+}
+
+if result["dislikes"] != 3 {
+t.Errorf("Expected 3 dislikes, got %d", result["dislikes"])
+}
+
+if err := mock.ExpectationsWereMet(); err != nil {
+t.Errorf("Unfulfilled expectations: %v", err)
+}
 }

@@ -5,19 +5,38 @@ const VideoGrid = forwardRef((props, ref) => {
   const [videos, setVideos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [categories, setCategories] = useState([])
+  const [selectedCategory, setSelectedCategory] = useState('')
 
   useEffect(() => {
     fetchVideos()
+    fetchCategories()
   }, [])
 
-  const fetchVideos = async (searchQuery = '') => {
+  const fetchCategories = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+      const response = await fetch(`${apiUrl}/api/videos/categories`)
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data)
+      }
+    } catch (err) {
+      console.error('Error fetching categories:', err)
+    }
+  }
+
+  const fetchVideos = async (searchQuery = '', category = '') => {
     try {
       setLoading(true)
       setError(null)
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
-      const url = searchQuery 
-        ? `${apiUrl}/api/videos?q=${encodeURIComponent(searchQuery)}`
-        : `${apiUrl}/api/videos`
+      
+      let url = `${apiUrl}/api/videos?`
+      const params = []
+      if (searchQuery) params.push(`q=${encodeURIComponent(searchQuery)}`)
+      if (category) params.push(`category=${encodeURIComponent(category)}`)
+      url += params.join('&')
       
       const response = await fetch(url)
       if (!response.ok) {
@@ -33,6 +52,11 @@ const VideoGrid = forwardRef((props, ref) => {
     }
   }
 
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category)
+    fetchVideos('', category)
+  }
+
   // Expose fetchVideos to parent via ref
   useImperativeHandle(ref, () => ({
     fetchVideos
@@ -41,7 +65,7 @@ const VideoGrid = forwardRef((props, ref) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">Loading videos...</div>
+        <div className="text-lg text-gray-600 dark:text-gray-400">Loading videos...</div>
       </div>
     )
   }
@@ -49,7 +73,7 @@ const VideoGrid = forwardRef((props, ref) => {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-red-600">Error: {error}</div>
+        <div className="text-lg text-red-600 dark:text-red-400">Error: {error}</div>
       </div>
     )
   }
@@ -57,17 +81,46 @@ const VideoGrid = forwardRef((props, ref) => {
   if (videos.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">No videos found</div>
+        <div className="text-lg text-gray-600 dark:text-gray-400">No videos found</div>
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {videos.map((video) => (
-        <VideoCard key={video.id} video={video} />
-      ))}
-    </div>
+    <>
+      {categories.length > 0 && (
+        <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
+          <button
+            onClick={() => handleCategoryChange('')}
+            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+              selectedCategory === ''
+                ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600'
+            }`}
+          >
+            All
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => handleCategoryChange(category)}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                selectedCategory === category
+                  ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {videos.map((video) => (
+          <VideoCard key={video.id} video={video} />
+        ))}
+      </div>
+    </>
   )
 })
 

@@ -17,13 +17,13 @@ function Sidebar({ isOpen }) {
   if (!isOpen) return null
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 overflow-y-auto">
+    <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
       <nav className="py-2">
         <div className="px-3 py-2">
           {menuItems.map((item) => (
             <button
               key={item.label}
-              className="w-full flex items-center gap-6 px-3 py-2 hover:bg-gray-100 rounded-lg text-sm"
+              className="w-full flex items-center gap-6 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm dark:text-gray-200"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {item.icon === 'home' && (
@@ -41,13 +41,13 @@ function Sidebar({ isOpen }) {
           ))}
         </div>
 
-        <hr className="my-2 border-gray-200" />
+        <hr className="my-2 border-gray-200 dark:border-gray-700" />
 
         <div className="px-3 py-2">
           {libraryItems.map((item) => (
             <button
               key={item.label}
-              className="w-full flex items-center gap-6 px-3 py-2 hover:bg-gray-100 rounded-lg text-sm"
+              className="w-full flex items-center gap-6 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm dark:text-gray-200"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {item.icon === 'library' && (

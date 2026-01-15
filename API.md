@@ -61,6 +61,8 @@ curl "http://localhost:8080/api/videos?q=tutorial&page=1&limit=5"
     "channel_name": "Code Master",
     "channel_avatar": "https://example.com/avatar.jpg",
     "views": 125000,
+    "likes": 0,
+    "dislikes": 0,
     "duration": "12:34",
     "uploaded_at": "2024-01-10T10:30:00Z",
     "created_at": "2024-01-10T10:30:00Z",
@@ -97,6 +99,8 @@ curl http://localhost:8080/api/videos/1
   "channel_name": "Code Master",
   "channel_avatar": "https://example.com/avatar.jpg",
   "views": 125000,
+  "likes": 0,
+  "dislikes": 0,
   "duration": "12:34",
   "uploaded_at": "2024-01-10T10:30:00Z",
   "created_at": "2024-01-10T10:30:00Z",
@@ -165,6 +169,8 @@ curl -X POST http://localhost:8080/api/videos \
   "channel_name": "My Channel",
   "channel_avatar": "https://example.com/avatar.jpg",
   "views": 0,
+  "likes": 0,
+  "dislikes": 0,
   "duration": "10:30",
   "uploaded_at": "2024-01-12T04:30:00Z",
   "created_at": "2024-01-12T04:30:00Z",
@@ -205,6 +211,247 @@ curl -X POST http://localhost:8080/api/videos/1/views
 
 ---
 
+#### POST /videos/{id}/like
+Increment the like count for a video.
+
+**Path Parameters:**
+- `id` (required): Video ID
+
+**Example Request:**
+```bash
+curl -X POST http://localhost:8080/api/videos/1/like
+```
+
+**Response:**
+```json
+{
+  "likes": 1
+}
+```
+
+**Status Codes:**
+- `200 OK` - Likes incremented successfully
+- `400 Bad Request` - Invalid video ID
+- `404 Not Found` - Video not found
+- `500 Internal Server Error` - Database error
+
+---
+
+#### POST /videos/{id}/dislike
+Increment the dislike count for a video.
+
+**Path Parameters:**
+- `id` (required): Video ID
+
+**Example Request:**
+```bash
+curl -X POST http://localhost:8080/api/videos/1/dislike
+```
+
+**Response:**
+```json
+{
+  "dislikes": 1
+}
+```
+
+**Status Codes:**
+- `200 OK` - Dislikes incremented successfully
+- `400 Bad Request` - Invalid video ID
+- `404 Not Found` - Video not found
+- `500 Internal Server Error` - Database error
+
+---
+
+### Comments
+
+#### GET /videos/{videoId}/comments
+Retrieve all comments for a specific video.
+
+**Path Parameters:**
+- `videoId` (required): Video ID
+
+**Example Request:**
+```bash
+curl http://localhost:8080/api/videos/1/comments
+```
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "video_id": 1,
+    "user_id": 1,
+    "content": "Great video!",
+    "created_at": "2024-01-12T10:30:00Z",
+    "updated_at": "2024-01-12T10:30:00Z"
+  },
+  {
+    "id": 2,
+    "video_id": 1,
+    "user_id": 2,
+    "content": "Thanks for sharing!",
+    "created_at": "2024-01-12T11:00:00Z",
+    "updated_at": "2024-01-12T11:00:00Z"
+  }
+]
+```
+
+**Status Codes:**
+- `200 OK` - Comments retrieved successfully
+- `400 Bad Request` - Invalid video ID
+- `500 Internal Server Error` - Database error
+
+---
+
+#### POST /videos/{videoId}/comments
+Create a new comment on a video.
+
+**Path Parameters:**
+- `videoId` (required): Video ID
+
+**Request Body:**
+```json
+{
+  "user_id": 1,
+  "content": "Great video!"
+}
+```
+
+**Required Fields:**
+- `user_id` - User ID (positive integer)
+- `content` - Comment content (non-empty string)
+
+**Example Request:**
+```bash
+curl -X POST http://localhost:8080/api/videos/1/comments \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": 1,
+    "content": "Great video!"
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": 3,
+  "video_id": 1,
+  "user_id": 1,
+  "content": "Great video!",
+  "created_at": "2024-01-12T12:00:00Z",
+  "updated_at": "2024-01-12T12:00:00Z"
+}
+```
+
+**Status Codes:**
+- `201 Created` - Comment created successfully
+- `400 Bad Request` - Invalid request body or missing required fields
+- `500 Internal Server Error` - Database error
+
+---
+
+#### GET /comments/{id}
+Retrieve a specific comment by ID.
+
+**Path Parameters:**
+- `id` (required): Comment ID
+
+**Example Request:**
+```bash
+curl http://localhost:8080/api/comments/1
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "video_id": 1,
+  "user_id": 1,
+  "content": "Great video!",
+  "created_at": "2024-01-12T10:30:00Z",
+  "updated_at": "2024-01-12T10:30:00Z"
+}
+```
+
+**Status Codes:**
+- `200 OK` - Comment found
+- `400 Bad Request` - Invalid comment ID
+- `404 Not Found` - Comment not found
+- `500 Internal Server Error` - Database error
+
+---
+
+#### PUT /comments/{id}
+Update an existing comment.
+
+**Path Parameters:**
+- `id` (required): Comment ID
+
+**Request Body:**
+```json
+{
+  "content": "Updated comment!"
+}
+```
+
+**Required Fields:**
+- `content` - Comment content (non-empty string)
+
+**Example Request:**
+```bash
+curl -X PUT http://localhost:8080/api/comments/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "Updated comment!"
+  }'
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "video_id": 1,
+  "user_id": 1,
+  "content": "Updated comment!",
+  "created_at": "2024-01-12T10:30:00Z",
+  "updated_at": "2024-01-12T12:30:00Z"
+}
+```
+
+**Status Codes:**
+- `200 OK` - Comment updated successfully
+- `400 Bad Request` - Invalid request body or missing required fields
+- `404 Not Found` - Comment not found
+- `500 Internal Server Error` - Database error
+
+---
+
+#### DELETE /comments/{id}
+Delete a comment.
+
+**Path Parameters:**
+- `id` (required): Comment ID
+
+**Example Request:**
+```bash
+curl -X DELETE http://localhost:8080/api/comments/1
+```
+
+**Response:**
+```
+(Empty response body)
+```
+
+**Status Codes:**
+- `204 No Content` - Comment deleted successfully
+- `400 Bad Request` - Invalid comment ID
+- `404 Not Found` - Comment not found
+- `500 Internal Server Error` - Database error
+
+---
+
 ## Rate Limiting
 
 The API implements rate limiting to prevent abuse:
@@ -234,9 +481,13 @@ HTTP/1.1 <status_code>
 Common error messages:
 - `Invalid video ID` - Provided ID is not a valid number
 - `Video not found` - No video exists with the given ID
+- `Invalid comment ID` - Provided ID is not a valid number
+- `Comment not found` - No comment exists with the given ID
 - `Title is required` - Required field missing
 - `URL is required` - Required field missing
 - `Channel name is required` - Required field missing
+- `Content is required` - Required field missing (for comments)
+- `User ID is required` - Required field missing (for comments)
 - `Rate limit exceeded` - Too many requests
 
 ## Best Practices
