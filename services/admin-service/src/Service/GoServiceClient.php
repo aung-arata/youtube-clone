@@ -23,6 +23,13 @@ class GoServiceClient
         ]);
         
         $response = curl_exec($ch);
+        
+        if ($response === false) {
+            error_log("cURL error: " . curl_error($ch));
+            curl_close($ch);
+            return null;
+        }
+        
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         
@@ -53,6 +60,13 @@ class GoServiceClient
         ]);
         
         $response = curl_exec($ch);
+        
+        if ($response === false) {
+            error_log("cURL error: " . curl_error($ch));
+            curl_close($ch);
+            return null;
+        }
+        
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         
@@ -83,6 +97,13 @@ class GoServiceClient
         ]);
         
         $response = curl_exec($ch);
+        
+        if ($response === false) {
+            error_log("cURL error: " . curl_error($ch));
+            curl_close($ch);
+            return null;
+        }
+        
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         
@@ -107,7 +128,14 @@ class GoServiceClient
             CURLOPT_TIMEOUT => 5
         ]);
         
-        curl_exec($ch);
+        $response = curl_exec($ch);
+        
+        if ($response === false) {
+            error_log("cURL error: " . curl_error($ch));
+            curl_close($ch);
+            return false;
+        }
+        
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         

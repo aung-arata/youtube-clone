@@ -76,8 +76,27 @@ class DatabaseService
             return null;
         }
         
+        // Whitelist of allowed tables to prevent SQL injection
+        $allowedTables = [
+            'admin_users', 'moderation_queue', 'blog_posts', 'documentation',
+            'help_articles', 'email_templates', 'email_log', 'reports'
+        ];
+        
+        if (!in_array($table, $allowedTables)) {
+            error_log("Invalid table name: {$table}");
+            return null;
+        }
+        
         $columns = array_keys($data);
         $placeholders = array_fill(0, count($columns), '?');
+        
+        // Column names are from application code, but still validate them
+        foreach ($columns as $col) {
+            if (!preg_match('/^[a-z_]+$/', $col)) {
+                error_log("Invalid column name: {$col}");
+                return null;
+            }
+        }
         
         $sql = sprintf(
             "INSERT INTO %s (%s) VALUES (%s) RETURNING id",
@@ -104,6 +123,26 @@ class DatabaseService
     {
         if (!$this->pdo) {
             return false;
+        }
+        
+        // Whitelist of allowed tables to prevent SQL injection
+        $allowedTables = [
+            'admin_users', 'moderation_queue', 'blog_posts', 'documentation',
+            'help_articles', 'email_templates', 'email_log', 'reports'
+        ];
+        
+        if (!in_array($table, $allowedTables)) {
+            error_log("Invalid table name: {$table}");
+            return false;
+        }
+        
+        // Validate column names
+        $allColumns = array_merge(array_keys($data), array_keys($where));
+        foreach ($allColumns as $col) {
+            if (!preg_match('/^[a-z_]+$/', $col)) {
+                error_log("Invalid column name: {$col}");
+                return false;
+            }
         }
         
         $setClauses = [];
@@ -140,6 +179,25 @@ class DatabaseService
     {
         if (!$this->pdo) {
             return false;
+        }
+        
+        // Whitelist of allowed tables to prevent SQL injection
+        $allowedTables = [
+            'admin_users', 'moderation_queue', 'blog_posts', 'documentation',
+            'help_articles', 'email_templates', 'email_log', 'reports'
+        ];
+        
+        if (!in_array($table, $allowedTables)) {
+            error_log("Invalid table name: {$table}");
+            return false;
+        }
+        
+        // Validate column names
+        foreach (array_keys($where) as $col) {
+            if (!preg_match('/^[a-z_]+$/', $col)) {
+                error_log("Invalid column name: {$col}");
+                return false;
+            }
         }
         
         $whereClauses = [];

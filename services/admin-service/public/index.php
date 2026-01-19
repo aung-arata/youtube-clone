@@ -13,6 +13,10 @@ use App\Controller\ReportController;
 
 // Load environment variables
 $dotenv = parse_ini_file(__DIR__ . '/../.env');
+if ($dotenv === false) {
+    error_log("Failed to load .env file");
+    $dotenv = [];
+}
 foreach ($dotenv as $key => $value) {
     $_ENV[$key] = $value;
 }
