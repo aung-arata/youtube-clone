@@ -68,6 +68,24 @@ services:
     networks:
       - microservices_network
 
+  admin-db:
+    image: postgres:15-alpine
+    container_name: admin_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: admin_service_db
+    volumes:
+      - admin_db_data:/var/lib/postgresql/data
+      - ./services/admin-service/config/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices_network
+
   # Microservices
   video-service:
     build:
@@ -176,6 +194,27 @@ services:
       - microservices_network
     restart: unless-stopped
 
+  admin-service:
+    build:
+      context: ./services/admin-service
+      dockerfile: Dockerfile
+    container_name: admin_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@admin-db:5432/admin_service_db
+      PORT: 8085
+      VIDEO_SERVICE_URL: http://video-service:8081
+      USER_SERVICE_URL: http://user-service:8082
+      COMMENT_SERVICE_URL: http://comment-service:8083
+      HISTORY_SERVICE_URL: http://history-service:8084
+    ports:
+      - "8085:8085"
+    depends_on:
+      admin-db:
+        condition: service_healthy
+    networks:
+      - microservices_network
+    restart: unless-stopped
+
   # Frontend
   frontend:
     build:
@@ -195,6 +234,7 @@ volumes:
   user_db_data:
   comment_db_data:
   history_db_data:
+  admin_db_data:
 
 networks:
   microservices_network:
