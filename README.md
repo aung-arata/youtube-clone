@@ -2,6 +2,8 @@
 
 A full-stack web-based YouTube clone built with **Microservices Architecture** using React, Tailwind CSS, Golang, and PostgreSQL.
 
+> **📊 Technology Stack Analysis**: Interested in PHP + Go hybrid architecture? See [PHP_GO_INTEGRATION_ANALYSIS.md](PHP_GO_INTEGRATION_ANALYSIS.md) for a comprehensive evaluation of integrating PHP alongside Go.
+
 ## Architecture
 
 This project follows a **microservices architecture** pattern with:
