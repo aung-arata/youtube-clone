@@ -52,6 +52,8 @@ This project follows a **microservices architecture** pattern with:
 5. **Team Autonomy** - Different teams can work on different services independently
 6. **Database per Service** - Each service owns its data, ensuring loose coupling
 
+For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.md).
+
 ## Features
 
 ### Core Features
