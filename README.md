@@ -12,6 +12,46 @@ This project follows a **microservices architecture** pattern with:
 - **History Service** - Tracks user watch history
 - **Separate databases** - Each service has its own PostgreSQL database for data isolation
 
+### Architecture Diagram
+
+```
+┌─────────────┐
+│   Frontend  │
+│   (React)   │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────────────────────────────────────┐
+│           API Gateway (Port 8080)               │
+│  - Request Routing                              │
+│  - CORS Handling                                │
+│  - Rate Limiting                                │
+│  - Request Logging                              │
+└──────┬──────────────┬──────────┬────────────┬───┘
+       │              │          │            │
+       ▼              ▼          ▼            ▼
+┌──────────┐   ┌──────────┐  ┌──────────┐  ┌──────────┐
+│  Video   │   │   User   │  │ Comment  │  │ History  │
+│ Service  │   │ Service  │  │ Service  │  │ Service  │
+│ (8081)   │   │ (8082)   │  │ (8083)   │  │ (8084)   │
+└────┬─────┘   └────┬─────┘  └────┬─────┘  └────┬─────┘
+     │              │              │              │
+     ▼              ▼              ▼              ▼
+┌──────────┐   ┌──────────┐  ┌──────────┐  ┌──────────┐
+│ Video DB │   │ User DB  │  │Comment DB│  │History DB│
+│(Postgres)│   │(Postgres)│  │(Postgres)│  │(Postgres)│
+└──────────┘   └──────────┘  └──────────┘  └──────────┘
+```
+
+### Benefits of Microservices Architecture
+
+1. **Independent Scaling** - Each service can be scaled independently based on demand
+2. **Technology Flexibility** - Different services can use different technologies if needed
+3. **Fault Isolation** - Failure in one service doesn't bring down the entire system
+4. **Independent Deployment** - Services can be deployed independently without affecting others
+5. **Team Autonomy** - Different teams can work on different services independently
+6. **Database per Service** - Each service owns its data, ensuring loose coupling
+
 ## Features
 
 ### Core Features
