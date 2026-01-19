@@ -1,6 +1,16 @@
 # YouTube Clone
 
-A full-stack web-based YouTube clone built with React, Tailwind CSS, Golang, and PostgreSQL.
+A full-stack web-based YouTube clone built with **Microservices Architecture** using React, Tailwind CSS, Golang, and PostgreSQL.
+
+## Architecture
+
+This project follows a **microservices architecture** pattern with:
+- **API Gateway** - Single entry point for all client requests
+- **Video Service** - Handles video management, views, likes/dislikes
+- **User Service** - Manages user profiles and authentication
+- **Comment Service** - Handles comment CRUD operations
+- **History Service** - Tracks user watch history
+- **Separate databases** - Each service has its own PostgreSQL database for data isolation
 
 ## Features
 
@@ -21,7 +31,9 @@ A full-stack web-based YouTube clone built with React, Tailwind CSS, Golang, and
 - 👤 User profiles with edit functionality
 - 📜 Watch history tracking
 
-### Backend Features
+### Backend Features (Microservices)
+- 🏗️ **Microservices Architecture** with independent services
+- 🚪 **API Gateway** for routing and middleware
 - ✅ Input validation and error handling
 - 🔒 Rate limiting middleware (100 requests/minute)
 - 📝 Request logging middleware
@@ -32,6 +44,7 @@ A full-stack web-based YouTube clone built with React, Tailwind CSS, Golang, and
 - 👤 User profile API (Create, Read, Update)
 - 📜 Watch history API with pagination
 - 🏷️ Category filtering and management
+- 🗄️ **Database per Service** pattern for data isolation
 - 🧪 Comprehensive unit tests
 - 🐳 Docker support with multi-stage builds
 
@@ -49,9 +62,12 @@ A full-stack web-based YouTube clone built with React, Tailwind CSS, Golang, and
 - 📜 Watch history component and tracking
 
 ### DevOps & Code Quality
+- 🏗️ **Microservices Architecture** with service isolation
 - 🔄 CI/CD pipeline with GitHub Actions
-- 🐳 Full Docker Compose setup for all services
+- 🐳 Full Docker Compose setup for all microservices
+- 🔀 Service orchestration with Docker Compose
 - 📦 Multi-stage Docker builds for optimization
+- 🗄️ Separate PostgreSQL databases for each service
 - 🧪 Backend unit tests with sqlmock
 - 🔍 Linting configuration (golangci-lint)
 - 📋 Environment-based configuration
@@ -62,53 +78,120 @@ A full-stack web-based YouTube clone built with React, Tailwind CSS, Golang, and
 - **React** - UI library
 - **Tailwind CSS** - Utility-first CSS framework
 - **Vite** - Build tool and development server
+- **Nginx** - Web server for production
 
-### Backend
-- **Golang** - Backend language
+### Backend - Microservices
+- **Golang** - Backend language for all services
 - **Gorilla Mux** - HTTP router
-- **PostgreSQL** - Database
+- **PostgreSQL** - Database (one per service)
 - **lib/pq** - PostgreSQL driver
+
+### Microservices
+1. **API Gateway** (Port 8080)
+   - Routes requests to appropriate services
+   - CORS handling
+   - Rate limiting (100 req/min)
+   - Request logging
+   
+2. **Video Service** (Port 8081)
+   - Video CRUD operations
+   - Search functionality
+   - View count tracking
+   - Like/dislike management
+   - Category management
+   
+3. **User Service** (Port 8082)
+   - User profile management
+   - User CRUD operations
+   
+4. **Comment Service** (Port 8083)
+   - Comment CRUD operations
+   - Video comment associations
+   
+5. **History Service** (Port 8084)
+   - Watch history tracking
+   - History retrieval with pagination
+
+### Infrastructure
+- **Docker** - Containerization
+- **Docker Compose** - Service orchestration
+- **PostgreSQL 15** - Multiple database instances
 
 ## Project Structure
 
 ```
 youtube-clone/
-├── frontend/              # React frontend
+├── frontend/                      # React frontend
 │   ├── src/
-│   │   ├── components/   # React components
-│   │   ├── pages/        # Page components
-│   │   ├── assets/       # Static assets
-│   │   ├── App.jsx       # Main App component
-│   │   ├── main.jsx      # Entry point
-│   │   └── index.css     # Global styles
-│   ├── index.html        # HTML template
-│   ├── package.json      # Frontend dependencies
-│   ├── vite.config.js    # Vite configuration
-│   └── tailwind.config.js # Tailwind configuration
+│   │   ├── components/           # React components
+│   │   ├── pages/                # Page components
+│   │   ├── assets/               # Static assets
+│   │   ├── App.jsx               # Main App component
+│   │   ├── main.jsx              # Entry point
+│   │   └── index.css             # Global styles
+│   ├── Dockerfile                # Frontend Docker configuration
+│   └── package.json              # Frontend dependencies
 │
-├── backend/              # Golang backend
-│   ├── cmd/
-│   │   └── server/       # Server entry point
-│   ├── internal/
-│   │   ├── handlers/     # HTTP handlers
-│   │   ├── models/       # Data models
-│   │   └── database/     # Database connection
-│   ├── go.mod            # Go dependencies
-│   └── .env.example      # Environment variables example
+├── services/                      # Microservices
+│   ├── api-gateway/              # API Gateway service
+│   │   ├── cmd/server/           # Gateway entry point
+│   │   ├── internal/middleware/  # Logging and rate limiting
+│   │   ├── Dockerfile
+│   │   └── go.mod
+│   │
+│   ├── video-service/            # Video microservice
+│   │   ├── cmd/server/           # Service entry point
+│   │   ├── internal/
+│   │   │   ├── handlers/         # Video handlers
+│   │   │   ├── models/           # Video models
+│   │   │   └── database/         # DB connection
+│   │   ├── Dockerfile
+│   │   └── go.mod
+│   │
+│   ├── user-service/             # User microservice
+│   │   ├── cmd/server/           # Service entry point
+│   │   ├── internal/
+│   │   │   ├── handlers/         # User handlers
+│   │   │   ├── models/           # User models
+│   │   │   └── database/         # DB connection
+│   │   ├── Dockerfile
+│   │   └── go.mod
+│   │
+│   ├── comment-service/          # Comment microservice
+│   │   ├── cmd/server/           # Service entry point
+│   │   ├── internal/
+│   │   │   ├── handlers/         # Comment handlers
+│   │   │   ├── models/           # Comment models
+│   │   │   └── database/         # DB connection
+│   │   ├── Dockerfile
+│   │   └── go.mod
+│   │
+│   └── history-service/          # History microservice
+│       ├── cmd/server/           # Service entry point
+│       ├── internal/
+│       │   ├── handlers/         # History handlers
+│       │   ├── models/           # History models
+│       │   └── database/         # DB connection
+│       ├── Dockerfile
+│       └── go.mod
 │
-└── docker-compose.yml    # Docker setup for PostgreSQL
+├── backend/                       # Legacy monolithic backend (deprecated)
+│
+├── docker-compose.yml             # Original monolithic setup (deprecated)
+└── docker-compose.microservices.yml  # Microservices Docker Compose
 ```
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ and npm
-- Go 1.21+
-- PostgreSQL 15+ (or use Docker)
-- Docker and Docker Compose (optional, for database)
+- Docker and Docker Compose (recommended for microservices)
+- **OR** for local development:
+  - Node.js 18+ and npm
+  - Go 1.21+
+  - PostgreSQL 15+
 
-### Installation
+### Installation with Microservices (Recommended)
 
 1. **Clone the repository**
    ```bash
@@ -116,42 +199,100 @@ youtube-clone/
    cd youtube-clone
    ```
 
-2. **Set up the database**
-
-   Option A: Using Docker (recommended)
+2. **Run with Docker Compose**
    ```bash
-   docker-compose up -d postgres
+   # Build and start all microservices
+   docker-compose -f docker-compose.microservices.yml up -d
+   
+   # View logs
+   docker-compose -f docker-compose.microservices.yml logs -f
+   
+   # Stop all services
+   docker-compose -f docker-compose.microservices.yml down
+   
+   # Rebuild and restart
+   docker-compose -f docker-compose.microservices.yml up -d --build
    ```
 
-   Option B: Using local PostgreSQL
-   - Install PostgreSQL
-   - Create a database named `youtube_clone`
-   ```sql
-   CREATE DATABASE youtube_clone;
+   **Services will be available at:**
+   - Frontend: http://localhost:80
+   - API Gateway: http://localhost:8080
+   - Video Service: http://localhost:8081
+   - User Service: http://localhost:8082
+   - Comment Service: http://localhost:8083
+   - History Service: http://localhost:8084
+
+### Installation for Local Development
+
+If you want to run services individually for development:
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/aung-arata/youtube-clone.git
+   cd youtube-clone
    ```
 
-3. **Set up the backend**
+2. **Start PostgreSQL databases**
    ```bash
-   cd backend
+   # You'll need to create 4 databases:
+   CREATE DATABASE video_service_db;
+   CREATE DATABASE user_service_db;
+   CREATE DATABASE comment_service_db;
+   CREATE DATABASE history_service_db;
+   ```
+
+3. **Run each microservice**
    
-   # Copy environment file
-   cp .env.example .env
-   
-   # Install dependencies
+   Terminal 1 - Video Service:
+   ```bash
+   cd services/video-service
+   export DB_HOST=localhost
+   export DB_NAME=video_service_db
    go mod download
-   
-   # Run the server
    go run cmd/server/main.go
    ```
-
-   The backend will start on `http://localhost:8080`
+   
+   Terminal 2 - User Service:
+   ```bash
+   cd services/user-service
+   export DB_HOST=localhost
+   export DB_NAME=user_service_db
+   go mod download
+   go run cmd/server/main.go
+   ```
+   
+   Terminal 3 - Comment Service:
+   ```bash
+   cd services/comment-service
+   export DB_HOST=localhost
+   export DB_NAME=comment_service_db
+   go mod download
+   go run cmd/server/main.go
+   ```
+   
+   Terminal 4 - History Service:
+   ```bash
+   cd services/history-service
+   export DB_HOST=localhost
+   export DB_NAME=history_service_db
+   go mod download
+   go run cmd/server/main.go
+   ```
+   
+   Terminal 5 - API Gateway:
+   ```bash
+   cd services/api-gateway
+   export VIDEO_SERVICE_URL=http://localhost:8081
+   export USER_SERVICE_URL=http://localhost:8082
+   export COMMENT_SERVICE_URL=http://localhost:8083
+   export HISTORY_SERVICE_URL=http://localhost:8084
+   go mod download
+   go run cmd/server/main.go
+   ```
 
 4. **Set up the frontend**
    ```bash
    cd frontend
-   
-   # Copy environment file (optional)
-   cp .env.example .env
    
    # Install dependencies
    npm install
@@ -162,28 +303,21 @@ youtube-clone/
 
    The frontend will start on `http://localhost:3000`
 
-### Using Docker Compose (Recommended)
+### Monolithic Setup (Legacy - Deprecated)
 
-Run the entire stack with a single command:
+The original monolithic backend is still available in the `backend/` directory for backward compatibility:
 
 ```bash
-# Build and start all services
+# Using Docker Compose (monolithic)
 docker-compose up -d
 
-# View logs
-docker-compose logs -f
-
-# Stop all services
-docker-compose down
-
-# Rebuild and restart
-docker-compose up -d --build
+# Services:
+# - Frontend: http://localhost:80
+# - Backend API: http://localhost:8080
+# - PostgreSQL: localhost:5432
 ```
 
-Services:
-- Frontend: http://localhost:80
-- Backend API: http://localhost:8080
-- PostgreSQL: localhost:5432
+**Note:** The microservices architecture is the recommended approach.
 
 ### Building for Production
 
@@ -204,7 +338,11 @@ go build -o server cmd/server/main.go
 
 ## API Endpoints
 
-### Videos
+All API requests go through the **API Gateway** at `http://localhost:8080/api`
+
+The gateway routes requests to the appropriate microservice:
+
+### Videos (Video Service)
 
 - `GET /api/videos` - Get all videos
   - Query Parameters:
@@ -219,7 +357,7 @@ go build -o server cmd/server/main.go
 - `POST /api/videos/{id}/like` - Increment like count
 - `POST /api/videos/{id}/dislike` - Increment dislike count
 
-### Comments
+### Comments (Comment Service)
 
 - `GET /api/videos/{videoId}/comments` - Get all comments for a video
 - `POST /api/videos/{videoId}/comments` - Create a new comment on a video
@@ -227,13 +365,13 @@ go build -o server cmd/server/main.go
 - `PUT /api/comments/{id}` - Update a comment
 - `DELETE /api/comments/{id}` - Delete a comment
 
-### Users
+### Users (User Service)
 
 - `POST /api/users` - Create a new user
 - `GET /api/users/{id}` - Get user profile
 - `PUT /api/users/{id}` - Update user profile
 
-### Watch History
+### Watch History (History Service)
 
 - `POST /api/users/{userId}/history` - Add video to watch history
 - `GET /api/users/{userId}/history` - Get user's watch history
@@ -365,7 +503,11 @@ For more detailed API documentation, see [API.md](API.md).
 
 ## Database Schema
 
-### Videos Table
+Each microservice has its own PostgreSQL database following the **Database per Service** pattern.
+
+### Video Service Database (`video_service_db`)
+
+**Videos Table:**
 ```sql
 CREATE TABLE videos (
     id SERIAL PRIMARY KEY,
@@ -384,9 +526,18 @@ CREATE TABLE videos (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Indexes for performance
+CREATE INDEX idx_videos_title ON videos USING gin(to_tsvector('english', title));
+CREATE INDEX idx_videos_description ON videos USING gin(to_tsvector('english', description));
+CREATE INDEX idx_videos_channel_name ON videos (channel_name);
+CREATE INDEX idx_videos_uploaded_at ON videos (uploaded_at DESC);
+CREATE INDEX idx_videos_category ON videos (category);
 ```
 
-### Users Table
+### User Service Database (`user_service_db`)
+
+**Users Table:**
 ```sql
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
@@ -398,27 +549,41 @@ CREATE TABLE users (
 );
 ```
 
-### Comments Table
+### Comment Service Database (`comment_service_db`)
+
+**Comments Table:**
 ```sql
 CREATE TABLE comments (
     id SERIAL PRIMARY KEY,
-    video_id INTEGER REFERENCES videos(id) ON DELETE CASCADE,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    video_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Indexes for performance
+CREATE INDEX idx_comments_video_id ON comments (video_id);
+CREATE INDEX idx_comments_user_id ON comments (user_id);
 ```
 
-### Watch History Table
+**Note:** In microservices architecture, foreign key constraints to other services' data are removed. Services communicate through APIs.
+
+### History Service Database (`history_service_db`)
+
+**Watch History Table:**
 ```sql
 CREATE TABLE watch_history (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    video_id INTEGER REFERENCES videos(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL,
+    video_id INTEGER NOT NULL,
     watched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, video_id)
 );
+
+-- Indexes for performance
+CREATE INDEX idx_watch_history_user_id ON watch_history (user_id);
+CREATE INDEX idx_watch_history_watched_at ON watch_history (watched_at DESC);
 ```
 ```sql
 CREATE TABLE comments (
@@ -442,43 +607,135 @@ npm run preview # Preview production build
 ```
 
 ### Backend Development
+
+Each microservice can be developed independently:
+
+**Video Service:**
 ```bash
-cd backend
+cd services/video-service
 go run cmd/server/main.go  # Run server
-go build ./...             # Build all packages
 go test ./...              # Run tests
-go test -v -race -coverprofile=coverage.out ./...  # Run tests with coverage
+```
+
+**User Service:**
+```bash
+cd services/user-service
+go run cmd/server/main.go  # Run server
+go test ./...              # Run tests
+```
+
+**Comment Service:**
+```bash
+cd services/comment-service
+go run cmd/server/main.go  # Run server
+go test ./...              # Run tests
+```
+
+**History Service:**
+```bash
+cd services/history-service
+go run cmd/server/main.go  # Run server
+go test ./...              # Run tests
+```
+
+**API Gateway:**
+```bash
+cd services/api-gateway
+go run cmd/server/main.go  # Run server
 ```
 
 ### Testing
 
-**Backend Tests:**
+Each microservice has its own tests. Run tests for each service:
+
 ```bash
-cd backend
-go test -v ./...                    # Run all tests
-go test -v ./internal/handlers/...  # Run specific package tests
-go test -race ./...                 # Run tests with race detection
-go test -cover ./...                # Run tests with coverage
+# Test Video Service
+cd services/video-service
+go test -v ./...
+go test -race ./...                 # With race detection
+go test -cover ./...                # With coverage
+
+# Test other services similarly
+cd services/user-service && go test -v ./...
+cd services/comment-service && go test -v ./...
+cd services/history-service && go test -v ./...
 ```
 
 **Linting:**
 ```bash
-cd backend
-golangci-lint run  # Run Go linter
+# Lint each service
+cd services/video-service && golangci-lint run
+cd services/user-service && golangci-lint run
+cd services/comment-service && golangci-lint run
+cd services/history-service && golangci-lint run
+cd services/api-gateway && golangci-lint run
 ```
 
 ### Code Quality
 
 The project includes:
+- Microservices architecture with independent services
 - Backend unit tests with `go-sqlmock` for database mocking
 - CI/CD pipeline with GitHub Actions
 - Automatic linting and testing on pull requests
 - Code coverage reporting
 - Docker builds for all services
+- Database per service pattern
 
 ## Environment Variables
 
-### Backend (.env)
+### Microservices Configuration
+
+**Video Service:**
+```env
+DB_HOST=video-db
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=video_service_db
+PORT=8081
+```
+
+**User Service:**
+```env
+DB_HOST=user-db
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=user_service_db
+PORT=8082
+```
+
+**Comment Service:**
+```env
+DB_HOST=comment-db
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=comment_service_db
+PORT=8083
+```
+
+**History Service:**
+```env
+DB_HOST=history-db
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=history_service_db
+PORT=8084
+```
+
+**API Gateway:**
+```env
+VIDEO_SERVICE_URL=http://video-service:8081
+USER_SERVICE_URL=http://user-service:8082
+COMMENT_SERVICE_URL=http://comment-service:8083
+HISTORY_SERVICE_URL=http://history-service:8084
+PORT=8080
+```
+
+### Legacy Backend (.env) - Deprecated
 ```env
 # Database Configuration
 DB_HOST=localhost
