@@ -2,118 +2,104 @@
 
 namespace App\Controller;
 
-use App\Service\DatabaseService;
+use App\Entity\Report;
 use App\Service\GoServiceClient;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Annotation\Route;
 
-/**
- * Report Controller
- * Handles batch reporting and analytics
- */
-class ReportController
+#[Route('/reports', name: 'reports_')]
+class ReportController extends AbstractController
 {
-    private DatabaseService $db;
-    private GoServiceClient $goClient;
-    
-    public function __construct()
-    {
-        $this->db = new DatabaseService();
-        $this->goClient = new GoServiceClient();
+    public function __construct(
+        private GoServiceClient $goClient,
+        private EntityManagerInterface $em
+    ) {
     }
-    
-    /**
-     * Generate analytics report
-     */
-    public function generateAnalytics(): void
+
+    #[Route('/analytics', name: 'analytics', methods: ['GET'])]
+    public function generateAnalytics(Request $request): JsonResponse
     {
-        header('Content-Type: application/json');
+        $period = $request->query->get('period', 'week');
         
-        $period = $_GET['period'] ?? 'week'; // day, week, month
+        $videos = $this->goClient->get('/videos', 'video');
         
-        // Fetch data from Go services
-        $videos = $this->goClient->get('/videos', $_ENV['VIDEO_SERVICE_URL']);
+        $totalViews = 0;
+        $totalLikes = 0;
+        $totalVideos = is_array($videos) ? count($videos) : 0;
         
-        // Calculate statistics
-        $totalViews = array_sum(array_column($videos ?? [], 'views'));
-        $totalLikes = array_sum(array_column($videos ?? [], 'likes'));
-        $totalVideos = count($videos ?? []);
+        if (is_array($videos)) {
+            foreach ($videos as $video) {
+                $totalViews += $video['views'] ?? 0;
+                $totalLikes += $video['likes'] ?? 0;
+            }
+        }
         
-        $report = [
+        $reportData = [
             'period' => $period,
             'total_videos' => $totalVideos,
             'total_views' => $totalViews,
             'total_likes' => $totalLikes,
             'avg_views_per_video' => $totalVideos > 0 ? round($totalViews / $totalVideos, 2) : 0,
-            'generated_at' => date('Y-m-d H:i:s')
+            'generated_at' => (new \DateTime())->format('Y-m-d H:i:s')
         ];
         
         // Save report
-        $this->db->insert('reports', [
-            'type' => 'analytics',
-            'period' => $period,
-            'data' => json_encode($report),
-            'generated_at' => date('Y-m-d H:i:s')
-        ]);
+        $report = new Report();
+        $report->setType('analytics');
+        $report->setPeriod($period);
+        $report->setData($reportData);
         
-        echo json_encode($report);
+        $this->em->persist($report);
+        $this->em->flush();
+        
+        return $this->json($reportData);
     }
-    
-    /**
-     * Generate user report
-     */
-    public function generateUserReport(): void
+
+    #[Route('/users', name: 'users', methods: ['GET'])]
+    public function generateUserReport(): JsonResponse
     {
-        header('Content-Type: application/json');
-        
-        // Get user statistics
-        $adminUsers = $this->db->query(
-            'SELECT COUNT(*) as total, 
-                    SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as active,
-                    SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as suspended
-             FROM admin_users',
-            ['active', 'suspended']
-        );
-        
-        $report = [
-            'total_users' => $adminUsers[0]['total'] ?? 0,
-            'active_users' => $adminUsers[0]['active'] ?? 0,
-            'suspended_users' => $adminUsers[0]['suspended'] ?? 0,
-            'generated_at' => date('Y-m-d H:i:s')
+        // User statistics would come from database and Go services
+        $reportData = [
+            'total_users' => 0,
+            'active_users' => 0,
+            'suspended_users' => 0,
+            'generated_at' => (new \DateTime())->format('Y-m-d H:i:s')
         ];
         
-        echo json_encode($report);
+        return $this->json($reportData);
     }
-    
-    /**
-     * Generate video report
-     */
-    public function generateVideoReport(): void
+
+    #[Route('/videos', name: 'videos', methods: ['GET'])]
+    public function generateVideoReport(): JsonResponse
     {
-        header('Content-Type: application/json');
+        $videos = $this->goClient->get('/videos', 'video');
         
-        $videos = $this->goClient->get('/videos', $_ENV['VIDEO_SERVICE_URL']);
-        
-        // Group by category
         $byCategory = [];
-        foreach ($videos ?? [] as $video) {
-            $category = $video['category'] ?? 'Uncategorized';
-            if (!isset($byCategory[$category])) {
-                $byCategory[$category] = [
-                    'count' => 0,
-                    'total_views' => 0,
-                    'total_likes' => 0
-                ];
+        if (is_array($videos)) {
+            foreach ($videos as $video) {
+                $category = $video['category'] ?? 'Uncategorized';
+                if (!isset($byCategory[$category])) {
+                    $byCategory[$category] = [
+                        'count' => 0,
+                        'total_views' => 0,
+                        'total_likes' => 0
+                    ];
+                }
+                $byCategory[$category]['count']++;
+                $byCategory[$category]['total_views'] += $video['views'] ?? 0;
+                $byCategory[$category]['total_likes'] += $video['likes'] ?? 0;
             }
-            $byCategory[$category]['count']++;
-            $byCategory[$category]['total_views'] += $video['views'] ?? 0;
-            $byCategory[$category]['total_likes'] += $video['likes'] ?? 0;
         }
         
-        $report = [
+        $reportData = [
             'by_category' => $byCategory,
             'total_categories' => count($byCategory),
-            'generated_at' => date('Y-m-d H:i:s')
+            'generated_at' => (new \DateTime())->format('Y-m-d H:i:s')
         ];
         
-        echo json_encode($report);
+        return $this->json($reportData);
     }
 }

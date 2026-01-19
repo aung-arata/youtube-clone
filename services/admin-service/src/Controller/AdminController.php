@@ -2,108 +2,106 @@
 
 namespace App\Controller;
 
-use App\Service\DatabaseService;
+use App\Repository\AdminUserRepository;
+use App\Repository\ModerationQueueRepository;
 use App\Service\GoServiceClient;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Annotation\Route;
 
-/**
- * Admin Dashboard Controller
- * Handles admin operations: user management, content moderation, system config
- */
-class AdminController
+#[Route('/admin', name: 'admin_')]
+class AdminController extends AbstractController
 {
-    private DatabaseService $db;
-    private GoServiceClient $goClient;
-    
-    public function __construct()
-    {
-        $this->db = new DatabaseService();
-        $this->goClient = new GoServiceClient();
+    public function __construct(
+        private GoServiceClient $goClient,
+        private AdminUserRepository $adminUserRepo,
+        private ModerationQueueRepository $moderationRepo
+    ) {
     }
-    
-    /**
-     * Admin Dashboard Home
-     */
-    public function dashboard(): void
+
+    #[Route('', name: 'dashboard', methods: ['GET'])]
+    public function dashboard(): JsonResponse
     {
-        header('Content-Type: application/json');
-        
         // Get stats from Go services
-        $videoStats = $this->goClient->get('/videos', $_ENV['VIDEO_SERVICE_URL']);
-        $userStats = $this->goClient->get('/users', $_ENV['USER_SERVICE_URL']);
+        $videoStats = $this->goClient->get('/videos', 'video');
+        $userStats = $this->goClient->get('/users', 'user');
         
         $stats = [
-            'total_videos' => count($videoStats ?? []),
-            'total_users' => count($userStats ?? []),
-            'pending_moderation' => $this->db->query('SELECT COUNT(*) as count FROM moderation_queue WHERE status = ?', ['pending'])[0]['count'] ?? 0,
+            'total_videos' => is_array($videoStats) ? count($videoStats) : 0,
+            'total_users' => is_array($userStats) ? count($userStats) : 0,
+            'pending_moderation' => $this->moderationRepo->countByStatus('pending'),
             'service' => 'admin-dashboard'
         ];
         
-        echo json_encode($stats);
+        return $this->json($stats);
     }
-    
-    /**
-     * List all users with pagination
-     */
-    public function listUsers(): void
+
+    #[Route('/users', name: 'users', methods: ['GET'])]
+    public function listUsers(Request $request): JsonResponse
     {
-        header('Content-Type: application/json');
-        
-        $page = $_GET['page'] ?? 1;
-        $limit = min($_GET['limit'] ?? 20, 100);
-        $offset = ($page - 1) * $limit;
+        $page = max(1, (int) $request->query->get('page', 1));
+        $limit = min((int) $request->query->get('limit', 20), 100);
         
         // Get users from User Service
-        $users = $this->goClient->get("/users?page={$page}&limit={$limit}", $_ENV['USER_SERVICE_URL']);
+        $users = $this->goClient->get("/users?page={$page}&limit={$limit}", 'user');
         
         // Enrich with admin data
-        $adminData = $this->db->query(
-            'SELECT user_id, role, status, last_login FROM admin_users'
-        );
-        
+        $adminData = $this->adminUserRepo->findAll();
         $userMap = [];
-        foreach ($adminData as $row) {
-            $userMap[$row['user_id']] = $row;
+        foreach ($adminData as $adminUser) {
+            $userMap[$adminUser->getUserId()] = [
+                'role' => $adminUser->getRole(),
+                'status' => $adminUser->getStatus(),
+                'last_login' => $adminUser->getLastLogin()?->format('Y-m-d H:i:s')
+            ];
         }
         
         // Combine data
         if (is_array($users)) {
             foreach ($users as &$user) {
-                if (isset($userMap[$user['id']])) {
+                if (isset($userMap[$user['id'] ?? null])) {
                     $user = array_merge($user, $userMap[$user['id']]);
                 }
             }
         }
         
-        echo json_encode([
+        return $this->json([
             'users' => $users,
             'page' => $page,
             'limit' => $limit
         ]);
     }
-    
-    /**
-     * Content Moderation Queue
-     */
-    public function moderationQueue(): void
+
+    #[Route('/moderation', name: 'moderation', methods: ['GET'])]
+    public function moderationQueue(Request $request): JsonResponse
     {
-        header('Content-Type: application/json');
+        $status = $request->query->get('status', 'pending');
         
-        $status = $_GET['status'] ?? 'pending';
+        $queue = $this->moderationRepo->findByStatus($status, 50);
         
-        $queue = $this->db->query(
-            'SELECT * FROM moderation_queue WHERE status = ? ORDER BY created_at DESC LIMIT 50',
-            [$status]
-        );
-        
-        // Fetch associated content from Go services
-        foreach ($queue as &$item) {
-            if ($item['content_type'] === 'video') {
-                $item['content'] = $this->goClient->get("/videos/{$item['content_id']}", $_ENV['VIDEO_SERVICE_URL']);
-            } elseif ($item['content_type'] === 'comment') {
-                $item['content'] = $this->goClient->get("/comments/{$item['content_id']}", $_ENV['COMMENT_SERVICE_URL']);
+        $result = [];
+        foreach ($queue as $item) {
+            $itemData = [
+                'id' => $item->getId(),
+                'content_type' => $item->getContentType(),
+                'content_id' => $item->getContentId(),
+                'reporter_id' => $item->getReporterId(),
+                'reason' => $item->getReason(),
+                'status' => $item->getStatus(),
+                'created_at' => $item->getCreatedAt()->format('Y-m-d H:i:s')
+            ];
+            
+            // Fetch associated content from Go services
+            if ($item->getContentType() === 'video') {
+                $itemData['content'] = $this->goClient->get("/videos/{$item->getContentId()}", 'video');
+            } elseif ($item->getContentType() === 'comment') {
+                $itemData['content'] = $this->goClient->get("/comments/{$item->getContentId()}", 'comment');
             }
+            
+            $result[] = $itemData;
         }
         
-        echo json_encode(['queue' => $queue]);
+        return $this->json(['queue' => $result]);
     }
 }

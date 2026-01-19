@@ -2,220 +2,204 @@
 
 namespace App\Controller;
 
-use App\Service\DatabaseService;
+use App\Entity\BlogPost;
+use App\Entity\Documentation;
+use App\Entity\HelpArticle;
+use App\Repository\BlogPostRepository;
+use App\Repository\DocumentationRepository;
+use App\Repository\HelpArticleRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
-/**
- * CMS Controller
- * Handles blog posts, documentation, and help center articles
- */
-class CMSController
+#[Route('/cms', name: 'cms_')]
+class CMSController extends AbstractController
 {
-    private DatabaseService $db;
-    
-    public function __construct()
-    {
-        $this->db = new DatabaseService();
+    public function __construct(
+        private EntityManagerInterface $em,
+        private SluggerInterface $slugger,
+        private BlogPostRepository $blogRepo,
+        private DocumentationRepository $docRepo,
+        private HelpArticleRepository $helpRepo
+    ) {
     }
-    
-    /**
-     * List all blog posts
-     */
-    public function listBlogs(): void
+
+    #[Route('/blog', name: 'blog_list', methods: ['GET'])]
+    public function listBlogs(Request $request): JsonResponse
     {
-        header('Content-Type: application/json');
+        $page = max(1, (int) $request->query->get('page', 1));
+        $limit = min((int) $request->query->get('limit', 20), 100);
         
-        $page = $_GET['page'] ?? 1;
-        $limit = min($_GET['limit'] ?? 20, 100);
-        $offset = ($page - 1) * $limit;
+        $blogs = $this->blogRepo->findBy([], ['publishedAt' => 'DESC'], $limit, ($page - 1) * $limit);
         
-        $blogs = $this->db->query(
-            'SELECT * FROM blog_posts ORDER BY published_at DESC LIMIT ? OFFSET ?',
-            [$limit, $offset]
-        );
-        
-        echo json_encode(['blogs' => $blogs, 'page' => $page, 'limit' => $limit]);
-    }
-    
-    /**
-     * Create a new blog post
-     */
-    public function createBlog(): void
-    {
-        header('Content-Type: application/json');
-        
-        $data = json_decode(file_get_contents('php://input'), true);
-        
-        $required = ['title', 'content', 'author_id'];
-        foreach ($required as $field) {
-            if (empty($data[$field])) {
-                http_response_code(400);
-                echo json_encode(['error' => "Missing required field: {$field}"]);
-                return;
-            }
-        }
-        
-        $id = $this->db->insert('blog_posts', [
-            'title' => $data['title'],
-            'slug' => $this->slugify($data['title']),
-            'content' => $data['content'],
-            'excerpt' => substr($data['content'], 0, 200),
-            'author_id' => $data['author_id'],
-            'category' => $data['category'] ?? 'general',
-            'status' => $data['status'] ?? 'draft',
-            'published_at' => $data['status'] === 'published' ? date('Y-m-d H:i:s') : null
+        return $this->json([
+            'blogs' => array_map(fn($blog) => $blog->toArray(), $blogs),
+            'page' => $page,
+            'limit' => $limit
         ]);
-        
-        http_response_code(201);
-        echo json_encode(['id' => $id, 'message' => 'Blog post created']);
     }
-    
-    /**
-     * Get a specific blog post
-     */
-    public function getBlog(int $id): void
+
+    #[Route('/blog', name: 'blog_create', methods: ['POST'])]
+    public function createBlog(Request $request): JsonResponse
     {
-        header('Content-Type: application/json');
+        $data = json_decode($request->getContent(), true);
         
-        $blog = $this->db->query('SELECT * FROM blog_posts WHERE id = ?', [$id]);
-        
-        if (empty($blog)) {
-            http_response_code(404);
-            echo json_encode(['error' => 'Blog post not found']);
-            return;
+        if (empty($data['title']) || empty($data['content']) || empty($data['author_id'])) {
+            return $this->json(['error' => 'Missing required fields'], Response::HTTP_BAD_REQUEST);
         }
         
-        echo json_encode($blog[0]);
+        $blog = new BlogPost();
+        $blog->setTitle($data['title']);
+        $blog->setSlug($this->slugger->slug($data['title'])->lower()->toString());
+        $blog->setContent($data['content']);
+        $blog->setExcerpt(substr($data['content'], 0, 200));
+        $blog->setAuthorId($data['author_id']);
+        $blog->setCategory($data['category'] ?? 'general');
+        $blog->setStatus($data['status'] ?? 'draft');
+        
+        if (($data['status'] ?? 'draft') === 'published') {
+            $blog->setPublishedAt(new \DateTime());
+        }
+        
+        $this->em->persist($blog);
+        $this->em->flush();
+        
+        return $this->json([
+            'id' => $blog->getId(),
+            'message' => 'Blog post created'
+        ], Response::HTTP_CREATED);
     }
-    
-    /**
-     * Update a blog post
-     */
-    public function updateBlog(int $id): void
+
+    #[Route('/blog/{id}', name: 'blog_get', methods: ['GET'])]
+    public function getBlog(int $id): JsonResponse
     {
-        header('Content-Type: application/json');
+        $blog = $this->blogRepo->find($id);
         
-        $data = json_decode(file_get_contents('php://input'), true);
+        if (!$blog) {
+            return $this->json(['error' => 'Blog post not found'], Response::HTTP_NOT_FOUND);
+        }
         
-        $updates = [];
+        return $this->json($blog->toArray());
+    }
+
+    #[Route('/blog/{id}', name: 'blog_update', methods: ['PUT'])]
+    public function updateBlog(int $id, Request $request): JsonResponse
+    {
+        $blog = $this->blogRepo->find($id);
+        
+        if (!$blog) {
+            return $this->json(['error' => 'Blog post not found'], Response::HTTP_NOT_FOUND);
+        }
+        
+        $data = json_decode($request->getContent(), true);
+        
         if (isset($data['title'])) {
-            $updates['title'] = $data['title'];
-            $updates['slug'] = $this->slugify($data['title']);
+            $blog->setTitle($data['title']);
+            $blog->setSlug($this->slugger->slug($data['title'])->lower()->toString());
         }
-        if (isset($data['content'])) $updates['content'] = $data['content'];
-        if (isset($data['category'])) $updates['category'] = $data['category'];
+        if (isset($data['content'])) {
+            $blog->setContent($data['content']);
+        }
+        if (isset($data['category'])) {
+            $blog->setCategory($data['category']);
+        }
         if (isset($data['status'])) {
-            $updates['status'] = $data['status'];
-            if ($data['status'] === 'published') {
-                $updates['published_at'] = date('Y-m-d H:i:s');
+            $blog->setStatus($data['status']);
+            if ($data['status'] === 'published' && !$blog->getPublishedAt()) {
+                $blog->setPublishedAt(new \DateTime());
             }
         }
         
-        if (empty($updates)) {
-            http_response_code(400);
-            echo json_encode(['error' => 'No fields to update']);
-            return;
+        $this->em->flush();
+        
+        return $this->json(['message' => 'Blog post updated']);
+    }
+
+    #[Route('/blog/{id}', name: 'blog_delete', methods: ['DELETE'])]
+    public function deleteBlog(int $id): JsonResponse
+    {
+        $blog = $this->blogRepo->find($id);
+        
+        if (!$blog) {
+            return $this->json(['error' => 'Blog post not found'], Response::HTTP_NOT_FOUND);
         }
         
-        $updates['updated_at'] = date('Y-m-d H:i:s');
+        $this->em->remove($blog);
+        $this->em->flush();
         
-        $this->db->update('blog_posts', $updates, ['id' => $id]);
-        
-        echo json_encode(['message' => 'Blog post updated']);
+        return $this->json(['message' => 'Blog post deleted']);
     }
-    
-    /**
-     * Delete a blog post
-     */
-    public function deleteBlog(int $id): void
+
+    #[Route('/docs', name: 'docs_list', methods: ['GET'])]
+    public function listDocs(): JsonResponse
     {
-        header('Content-Type: application/json');
+        $docs = $this->docRepo->findBy([], ['category' => 'ASC', 'sortOrder' => 'ASC']);
         
-        $this->db->delete('blog_posts', ['id' => $id]);
-        
-        echo json_encode(['message' => 'Blog post deleted']);
-    }
-    
-    /**
-     * List documentation articles
-     */
-    public function listDocs(): void
-    {
-        header('Content-Type: application/json');
-        
-        $docs = $this->db->query(
-            'SELECT * FROM documentation ORDER BY category, sort_order'
-        );
-        
-        echo json_encode(['docs' => $docs]);
-    }
-    
-    /**
-     * Create documentation
-     */
-    public function createDoc(): void
-    {
-        header('Content-Type: application/json');
-        
-        $data = json_decode(file_get_contents('php://input'), true);
-        
-        $id = $this->db->insert('documentation', [
-            'title' => $data['title'],
-            'slug' => $this->slugify($data['title']),
-            'content' => $data['content'],
-            'category' => $data['category'] ?? 'general',
-            'sort_order' => $data['sort_order'] ?? 0
+        return $this->json([
+            'docs' => array_map(fn($doc) => $doc->toArray(), $docs)
         ]);
-        
-        http_response_code(201);
-        echo json_encode(['id' => $id, 'message' => 'Documentation created']);
     }
-    
-    /**
-     * List help articles
-     */
-    public function listHelpArticles(): void
+
+    #[Route('/docs', name: 'docs_create', methods: ['POST'])]
+    public function createDoc(Request $request): JsonResponse
     {
-        header('Content-Type: application/json');
+        $data = json_decode($request->getContent(), true);
         
-        $articles = $this->db->query(
-            'SELECT * FROM help_articles ORDER BY category, title'
-        );
+        if (empty($data['title']) || empty($data['content'])) {
+            return $this->json(['error' => 'Missing required fields'], Response::HTTP_BAD_REQUEST);
+        }
         
-        echo json_encode(['articles' => $articles]);
+        $doc = new Documentation();
+        $doc->setTitle($data['title']);
+        $doc->setSlug($this->slugger->slug($data['title'])->lower()->toString());
+        $doc->setContent($data['content']);
+        $doc->setCategory($data['category'] ?? 'general');
+        $doc->setSortOrder($data['sort_order'] ?? 0);
+        
+        $this->em->persist($doc);
+        $this->em->flush();
+        
+        return $this->json([
+            'id' => $doc->getId(),
+            'message' => 'Documentation created'
+        ], Response::HTTP_CREATED);
     }
-    
-    /**
-     * Create help article
-     */
-    public function createHelpArticle(): void
+
+    #[Route('/help', name: 'help_list', methods: ['GET'])]
+    public function listHelpArticles(): JsonResponse
     {
-        header('Content-Type: application/json');
+        $articles = $this->helpRepo->findBy([], ['category' => 'ASC', 'title' => 'ASC']);
         
-        $data = json_decode(file_get_contents('php://input'), true);
-        
-        $id = $this->db->insert('help_articles', [
-            'title' => $data['title'],
-            'slug' => $this->slugify($data['title']),
-            'content' => $data['content'],
-            'category' => $data['category'] ?? 'general'
+        return $this->json([
+            'articles' => array_map(fn($article) => $article->toArray(), $articles)
         ]);
-        
-        http_response_code(201);
-        echo json_encode(['id' => $id, 'message' => 'Help article created']);
     }
-    
-    /**
-     * Create URL-friendly slug
-     */
-    private function slugify(string $text): string
+
+    #[Route('/help', name: 'help_create', methods: ['POST'])]
+    public function createHelpArticle(Request $request): JsonResponse
     {
-        $text = preg_replace('~[^\pL\d]+~u', '-', $text);
-        $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
-        $text = preg_replace('~[^-\w]+~', '', $text);
-        $text = trim($text, '-');
-        $text = preg_replace('~-+~', '-', $text);
-        $text = strtolower($text);
+        $data = json_decode($request->getContent(), true);
         
-        return empty($text) ? 'n-a' : $text;
+        if (empty($data['title']) || empty($data['content'])) {
+            return $this->json(['error' => 'Missing required fields'], Response::HTTP_BAD_REQUEST);
+        }
+        
+        $article = new HelpArticle();
+        $article->setTitle($data['title']);
+        $article->setSlug($this->slugger->slug($data['title'])->lower()->toString());
+        $article->setContent($data['content']);
+        $article->setCategory($data['category'] ?? 'general');
+        
+        $this->em->persist($article);
+        $this->em->flush();
+        
+        return $this->json([
+            'id' => $article->getId(),
+            'message' => 'Help article created'
+        ], Response::HTTP_CREATED);
     }
 }

@@ -1,25 +1,43 @@
-# Simple Dockerfile for Admin Service
+# Symfony Admin Service Dockerfile
 
-FROM php:8.1-cli
+FROM php:8.2-cli AS base
 
-# Install PostgreSQL extension
-RUN apt-get update && apt-get install -y libpq-dev \
-    && docker-php-ext-install pdo pdo_pgsql \
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    libpq-dev \
+    libzip-dev \
+    && docker-php-ext-install pdo pdo_pgsql zip \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/admin-service
 
-# Copy application
+# Copy composer files first for better caching
+COPY composer.json composer.lock* ./
+
+# Install dependencies (will be minimal in production)
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist || composer install --no-dev --no-scripts --prefer-dist
+
+# Copy application code
 COPY . .
 
-# Install Composer and dependencies
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-RUN composer install --no-dev --optimize-autoloader --no-interaction || true
+# Optimize autoloader and run scripts
+RUN composer dump-autoload --no-dev --classmap-authoritative
 
-# Set permissions
-RUN mkdir -p var && chmod -R 777 var
+# Create var directory and set permissions
+RUN mkdir -p var/cache var/log \
+    && chmod -R 777 var
+
+# Set up Symfony runtime
+ENV APP_ENV=prod
+ENV APP_DEBUG=0
 
 EXPOSE 8085
 
-# Run PHP built-in server (for development/testing)
+# Use Symfony CLI server (or php built-in server)
 CMD ["php", "-S", "0.0.0.0:8085", "-t", "public"]

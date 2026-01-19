@@ -2,143 +2,156 @@
 
 namespace App\Service;
 
-/**
- * Go Service Client
- * HTTP client for communicating with Go microservices
- */
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Psr\Log\LoggerInterface;
+
 class GoServiceClient
 {
-    /**
-     * Make GET request to Go service
-     */
-    public function get(string $path, string $baseUrl): ?array
+    private array $serviceUrls;
+
+    public function __construct(
+        private HttpClientInterface $httpClient,
+        private LoggerInterface $logger,
+        string $videoServiceUrl,
+        string $userServiceUrl,
+        string $commentServiceUrl,
+        string $historyServiceUrl
+    ) {
+        $this->serviceUrls = [
+            'video' => $videoServiceUrl,
+            'user' => $userServiceUrl,
+            'comment' => $commentServiceUrl,
+            'history' => $historyServiceUrl,
+        ];
+    }
+
+    public function get(string $path, string $service): ?array
     {
-        $url = rtrim($baseUrl, '/') . '/' . ltrim($path, '/');
-        
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 5,
-            CURLOPT_HTTPHEADER => ['Accept: application/json']
-        ]);
-        
-        $response = curl_exec($ch);
-        
-        if ($response === false) {
-            error_log("cURL error: " . curl_error($ch));
-            curl_close($ch);
+        if (!isset($this->serviceUrls[$service])) {
+            $this->logger->error("Unknown service: {$service}");
             return null;
         }
-        
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        if ($httpCode === 200 && $response) {
-            return json_decode($response, true);
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Make POST request to Go service
-     */
-    public function post(string $path, string $baseUrl, array $data): ?array
-    {
-        $url = rtrim($baseUrl, '/') . '/' . ltrim($path, '/');
-        
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode($data),
-            CURLOPT_TIMEOUT => 5,
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
-                'Accept: application/json'
-            ]
-        ]);
-        
-        $response = curl_exec($ch);
-        
-        if ($response === false) {
-            error_log("cURL error: " . curl_error($ch));
-            curl_close($ch);
+
+        $url = rtrim($this->serviceUrls[$service], '/') . '/' . ltrim($path, '/');
+
+        try {
+            $response = $this->httpClient->request('GET', $url, [
+                'timeout' => 5,
+                'headers' => [
+                    'Accept' => 'application/json',
+                ],
+            ]);
+
+            if ($response->getStatusCode() === 200) {
+                return $response->toArray();
+            }
+
+            $this->logger->warning("Go service returned status {$response->getStatusCode()}", [
+                'service' => $service,
+                'url' => $url,
+            ]);
+
+            return null;
+        } catch (\Exception $e) {
+            $this->logger->error("Failed to call Go service: {$e->getMessage()}", [
+                'service' => $service,
+                'url' => $url,
+                'exception' => $e,
+            ]);
             return null;
         }
-        
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        if (in_array($httpCode, [200, 201]) && $response) {
-            return json_decode($response, true);
-        }
-        
-        return null;
     }
-    
-    /**
-     * Make PUT request to Go service
-     */
-    public function put(string $path, string $baseUrl, array $data): ?array
+
+    public function post(string $path, string $service, array $data): ?array
     {
-        $url = rtrim($baseUrl, '/') . '/' . ltrim($path, '/');
-        
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST => 'PUT',
-            CURLOPT_POSTFIELDS => json_encode($data),
-            CURLOPT_TIMEOUT => 5,
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
-                'Accept: application/json'
-            ]
-        ]);
-        
-        $response = curl_exec($ch);
-        
-        if ($response === false) {
-            error_log("cURL error: " . curl_error($ch));
-            curl_close($ch);
+        if (!isset($this->serviceUrls[$service])) {
+            $this->logger->error("Unknown service: {$service}");
             return null;
         }
-        
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        if ($httpCode === 200 && $response) {
-            return json_decode($response, true);
+
+        $url = rtrim($this->serviceUrls[$service], '/') . '/' . ltrim($path, '/');
+
+        try {
+            $response = $this->httpClient->request('POST', $url, [
+                'timeout' => 5,
+                'json' => $data,
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                ],
+            ]);
+
+            if (in_array($response->getStatusCode(), [200, 201])) {
+                return $response->toArray();
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            $this->logger->error("Failed to call Go service: {$e->getMessage()}", [
+                'service' => $service,
+                'url' => $url,
+                'exception' => $e,
+            ]);
+            return null;
         }
-        
-        return null;
     }
-    
-    /**
-     * Make DELETE request to Go service
-     */
-    public function delete(string $path, string $baseUrl): bool
+
+    public function put(string $path, string $service, array $data): ?array
     {
-        $url = rtrim($baseUrl, '/') . '/' . ltrim($path, '/');
-        
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST => 'DELETE',
-            CURLOPT_TIMEOUT => 5
-        ]);
-        
-        $response = curl_exec($ch);
-        
-        if ($response === false) {
-            error_log("cURL error: " . curl_error($ch));
-            curl_close($ch);
+        if (!isset($this->serviceUrls[$service])) {
+            $this->logger->error("Unknown service: {$service}");
+            return null;
+        }
+
+        $url = rtrim($this->serviceUrls[$service], '/') . '/' . ltrim($path, '/');
+
+        try {
+            $response = $this->httpClient->request('PUT', $url, [
+                'timeout' => 5,
+                'json' => $data,
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                ],
+            ]);
+
+            if ($response->getStatusCode() === 200) {
+                return $response->toArray();
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            $this->logger->error("Failed to call Go service: {$e->getMessage()}", [
+                'service' => $service,
+                'url' => $url,
+                'exception' => $e,
+            ]);
+            return null;
+        }
+    }
+
+    public function delete(string $path, string $service): bool
+    {
+        if (!isset($this->serviceUrls[$service])) {
+            $this->logger->error("Unknown service: {$service}");
             return false;
         }
-        
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        return in_array($httpCode, [200, 204]);
+
+        $url = rtrim($this->serviceUrls[$service], '/') . '/' . ltrim($path, '/');
+
+        try {
+            $response = $this->httpClient->request('DELETE', $url, [
+                'timeout' => 5,
+            ]);
+
+            return in_array($response->getStatusCode(), [200, 204]);
+        } catch (\Exception $e) {
+            $this->logger->error("Failed to call Go service: {$e->getMessage()}", [
+                'service' => $service,
+                'url' => $url,
+                'exception' => $e,
+            ]);
+            return false;
+        }
     }
 }

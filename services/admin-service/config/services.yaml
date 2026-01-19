@@ -1,0 +1,23 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    App\Controller\:
+        resource: '../src/Controller/'
+        tags: ['controller.service_arguments']
+
+    # Custom services
+    App\Service\GoServiceClient:
+        arguments:
+            $videoServiceUrl: '%env(VIDEO_SERVICE_URL)%'
+            $userServiceUrl: '%env(USER_SERVICE_URL)%'
+            $commentServiceUrl: '%env(COMMENT_SERVICE_URL)%'
+            $historyServiceUrl: '%env(HISTORY_SERVICE_URL)%'

@@ -1,33 +1,82 @@
-# Admin Service
+# Admin Service - Symfony 6.4
 
-PHP-based admin dashboard and CMS service for YouTube Clone.
+Admin Dashboard and CMS Service for YouTube Clone built with **Symfony 6.4 LTS**.
 
 ## Features
 
 ### Admin Dashboard
-- User management
+- User management with role-based access
 - Content moderation queue
 - System statistics and monitoring
-- Integration with all Go microservices
+- Real-time integration with Go microservices
 
 ### CMS (Content Management System)
-- **Blog Posts**: Create, edit, publish, and manage blog posts
-- **Documentation**: Maintain technical documentation
-- **Help Center**: Create and manage help articles for users
+- **Blog Posts**: Full CRUD with Doctrine ORM, automatic slug generation, categories, publish workflow
+- **Documentation**: Organized documentation with categories and sorting
+- **Help Center**: Searchable help articles with view tracking
 
 ### Email Template System
-- Create and manage HTML email templates
-- Variable substitution support (e.g., `{{username}}`, `{{video_title}}`)
-- Email sending API
-- Email delivery logging and tracking
+- Template management with Symfony Twig integration
+- Variable substitution support
+- Email delivery tracking
+- HTML and plain text templates
 
 ### Batch Reporting
-- Analytics report generation
+- Analytics reports with data aggregation
 - User activity reports
-- Video statistics reports
-- Scheduled batch jobs
+- Video statistics by category
+- Report persistence with JSON data storage
+
+## Technology Stack
+
+- **Symfony 6.4 LTS** - Full-stack PHP framework
+- **Doctrine ORM** - Database abstraction and ORM
+- **PostgreSQL 15** - Database
+- **Symfony HTTP Client** - Integration with Go services
+- **Twig** - Template engine (ready for admin UI)
+
+## Project Structure (Symfony Standard)
+
+```
+admin-service/
+├── bin/
+│   └── console              # Symfony console commands
+├── config/
+│   ├── packages/           # Bundle configurations
+│   ├── routes.yaml         # Route definitions
+│   └── services.yaml       # Service container config
+├── migrations/             # Database migrations
+├── public/
+│   └── index.php           # Application entry point
+├── src/
+│   ├── Controller/         # Symfony controllers with attributes
+│   │   ├── AdminController.php
+│   │   ├── CMSController.php
+│   │   ├── EmailController.php
+│   │   ├── ReportController.php
+│   │   └── HealthController.php
+│   ├── Entity/             # Doctrine entities
+│   │   ├── BlogPost.php
+│   │   ├── Documentation.php
+│   │   ├── HelpArticle.php
+│   │   ├── EmailTemplate.php
+│   │   ├── EmailLog.php
+│   │   ├── Report.php
+│   │   ├── AdminUser.php
+│   │   └── ModerationQueue.php
+│   ├── Repository/         # Doctrine repositories
+│   ├── Service/            # Business logic services
+│   │   └── GoServiceClient.php
+│   └── Kernel.php          # Application kernel
+├── templates/              # Twig templates (for future admin UI)
+├── var/                    # Cache and logs
+├── composer.json           # Dependencies
+└── .env                    # Environment variables
+```
 
 ## API Endpoints
+
+All endpoints use Symfony's routing system with attributes.
 
 ### Health Check
 ```
@@ -36,30 +85,30 @@ GET /health
 
 ### Admin Dashboard
 ```
-GET  /admin                    # Dashboard statistics
-GET  /admin/users              # List users with admin data
-GET  /admin/moderation         # Content moderation queue
+GET  /admin                 # Dashboard statistics
+GET  /admin/users           # List users with pagination
+GET  /admin/moderation      # Content moderation queue
 ```
 
 ### CMS - Blog Posts
 ```
-GET    /cms/blog               # List blog posts
-POST   /cms/blog               # Create blog post
-GET    /cms/blog/{id}          # Get blog post
-PUT    /cms/blog/{id}          # Update blog post
-DELETE /cms/blog/{id}          # Delete blog post
+GET    /cms/blog            # List blog posts (paginated)
+POST   /cms/blog            # Create blog post
+GET    /cms/blog/{id}       # Get blog post
+PUT    /cms/blog/{id}       # Update blog post
+DELETE /cms/blog/{id}       # Delete blog post
 ```
 
 ### CMS - Documentation
 ```
-GET    /cms/docs               # List documentation
-POST   /cms/docs               # Create documentation
+GET  /cms/docs              # List documentation
+POST /cms/docs              # Create documentation
 ```
 
 ### CMS - Help Articles
 ```
-GET    /cms/help               # List help articles
-POST   /cms/help               # Create help article
+GET  /cms/help              # List help articles
+POST /cms/help              # Create help article
 ```
 
 ### Email Templates
@@ -74,76 +123,129 @@ POST   /email/send             # Send email using template
 
 ### Reports
 ```
-GET /reports/analytics         # Generate analytics report
-GET /reports/users             # Generate user report
-GET /reports/videos            # Generate video report
+GET /reports/analytics      # Generate analytics report
+GET /reports/users          # Generate user report
+GET /reports/videos         # Generate video report
 ```
 
 ## Database Schema
 
-The admin service uses PostgreSQL with the following tables:
+Managed by Doctrine ORM with migrations.
 
-- `admin_users` - User roles and permissions
-- `moderation_queue` - Content moderation queue
-- `blog_posts` - Blog posts and articles
-- `documentation` - Technical documentation
-- `help_articles` - Help center articles
-- `email_templates` - Email templates
-- `email_log` - Email delivery log
-- `reports` - Generated reports
+### Entities
 
-## Integration with Go Services
-
-The admin service communicates with Go microservices via HTTP:
-
-- **Video Service** (Port 8081) - Fetch video data, statistics
-- **User Service** (Port 8082) - User management
-- **Comment Service** (Port 8083) - Comment moderation
-- **History Service** (Port 8084) - User activity tracking
+- **BlogPost** - Blog posts with slug, categories, publish status
+- **Documentation** - Technical documentation with sorting
+- **HelpArticle** - Help center articles with view tracking
+- **EmailTemplate** - Email templates with variable support
+- **EmailLog** - Email delivery tracking
+- **Report** - Generated reports with JSON data
+- **AdminUser** - Admin user roles and permissions
+- **ModerationQueue** - Content moderation workflow
 
 ## Development
 
-### Local Development
+### Local Development with Symfony CLI
 
 ```bash
 cd services/admin-service
+
+# Install dependencies
+composer install
+
+# Create database
+php bin/console doctrine:database:create
+
+# Run migrations
+php bin/console doctrine:migrations:migrate
+
+# Start development server
+symfony server:start --port=8085
+# or
 php -S localhost:8085 -t public
 ```
 
-### With Docker
+### Database Migrations
 
 ```bash
-docker-compose -f docker-compose.microservices.yml up admin-service
+# Create migration
+php bin/console make:migration
+
+# Run migrations
+php bin/console doctrine:migrations:migrate
+
+# Check schema
+php bin/console doctrine:schema:validate
 ```
 
-## Technology Stack
+### Symfony Console Commands
 
-- **PHP 8.2+**
-- **PostgreSQL 15**
-- **Nginx** (web server)
-- **PHP-FPM** (FastCGI Process Manager)
+```bash
+# Clear cache
+php bin/console cache:clear
+
+# List routes
+php bin/console debug:router
+
+# List services
+php bin/console debug:container
+
+# Generate entity
+php bin/console make:entity
+```
+
+## Docker Deployment
+
+```bash
+# Build
+docker build -t admin-service .
+
+# Run
+docker run -p 8085:8085 \
+  -e DATABASE_URL="postgresql://postgres:postgres@admin-db:5432/admin_service_db" \
+  -e VIDEO_SERVICE_URL="http://video-service:8081" \
+  admin-service
+```
+
+Or use Docker Compose:
+
+```bash
+docker-compose -f docker-compose.microservices.yml up -d admin-service
+```
 
 ## Environment Variables
 
 ```env
+APP_ENV=prod
+APP_SECRET=your-secret-key-here
 DATABASE_URL=postgresql://postgres:postgres@admin-db:5432/admin_service_db
-PORT=8085
 VIDEO_SERVICE_URL=http://video-service:8081
 USER_SERVICE_URL=http://user-service:8082
 COMMENT_SERVICE_URL=http://comment-service:8083
 HISTORY_SERVICE_URL=http://history-service:8084
 ```
 
+## Symfony Features Used
+
+- **Symfony Attributes** - Modern PHP 8 attributes for routing and configuration
+- **Doctrine ORM** - Full entity management with migrations
+- **Dependency Injection** - Autowiring and autoconfiguration
+- **HTTP Client** - Symfony HTTP Client for Go service integration
+- **Logging** - Monolog integration for error tracking
+- **Validation** - Symfony Validator (ready to use)
+- **Forms** - Symfony Forms (ready for admin UI)
+- **Twig** - Template engine (for future admin UI)
+
 ## Sample Requests
 
-### Create Blog Post
+### Create Blog Post (Symfony Way)
 
 ```bash
 curl -X POST http://localhost:8085/cms/blog \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Welcome to our platform",
-    "content": "We are excited to launch...",
+    "title": "Welcome to Symfony Admin",
+    "content": "This is a Symfony-powered admin service...",
     "author_id": 1,
     "category": "announcement",
     "status": "published"
@@ -156,25 +258,10 @@ curl -X POST http://localhost:8085/cms/blog \
 curl -X POST http://localhost:8085/email/templates \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "video_notification",
-    "subject": "New video from {{channel_name}}",
-    "html_content": "<h1>{{video_title}}</h1><p>Watch now!</p>",
-    "category": "notification"
-  }'
-```
-
-### Send Email
-
-```bash
-curl -X POST http://localhost:8085/email/send \
-  -H "Content-Type: application/json" \
-  -d '{
-    "to": "user@example.com",
-    "template_id": 1,
-    "variables": {
-      "username": "John",
-      "video_title": "My Awesome Video"
-    }
+    "name": "welcome_email",
+    "subject": "Welcome {{username}}!",
+    "html_content": "<h1>Welcome {{username}}</h1><p>Thanks for joining!</p>",
+    "category": "user"
   }'
 ```
 
@@ -184,21 +271,49 @@ curl -X POST http://localhost:8085/email/send \
 curl http://localhost:8085/reports/analytics?period=week
 ```
 
+## Benefits of Symfony
+
+1. **Mature Framework**: Battle-tested with 15+ years of development
+2. **Best Practices**: Follows PSR standards and SOLID principles
+3. **ORM Integration**: Doctrine provides powerful database abstraction
+4. **Dependency Injection**: Full DI container with autowiring
+5. **Debugging**: Symfony Profiler for development
+6. **Extensibility**: Large ecosystem of bundles
+7. **LTS Support**: Symfony 6.4 supported until November 2027
+
+## Future Enhancements
+
+- Admin web UI with Symfony UX and Stimulus
+- API Platform integration for auto-generated API docs
+- Symfony Messenger for async processing
+- Symfony Mailer for actual email sending
+- Symfony Security for authentication/authorization
+- EasyAdmin bundle for rapid admin panel development
+- Webpack Encore for frontend asset management
+
+## Testing
+
+```bash
+# Run tests (when implemented)
+php bin/console --env=test doctrine:database:create
+php bin/console --env=test doctrine:migrations:migrate
+vendor/bin/phpunit
+```
+
 ## Architecture
 
 ```
 ┌─────────────────┐
-│  Admin Frontend │ (Future: React Admin UI)
+│  Admin Frontend │ (Future: Symfony UX + Twig)
 └────────┬────────┘
          │
          ▼
 ┌─────────────────────────────┐
-│   Admin Service (PHP)       │
-│   Port: 8085                │
-│   ├─ Admin Dashboard        │
-│   ├─ CMS (Blog, Docs, Help) │
-│   ├─ Email Templates        │
-│   └─ Batch Reports          │
+│   Symfony 6.4 Application   │
+│   ├─ Controllers (Routing)  │
+│   ├─ Services (Business)    │
+│   ├─ Entities (ORM)         │
+│   └─ Repositories (Data)    │
 └────────┬────────────────────┘
          │
          ├─────────────┬──────────────┬──────────────┐
@@ -210,18 +325,9 @@ curl http://localhost:8085/reports/analytics?period=week
     └─────────┘  └─────────┘    └─────────┘   └─────────┘
 ```
 
-## Benefits
+## Support
 
-1. **Rapid Development**: PHP enables faster development of admin features (2-3x faster than Go)
-2. **Rich Ecosystem**: Easy access to CMS libraries, email templates, and admin panels
-3. **Isolated**: Failure in admin service doesn't affect user-facing Go services
-4. **Flexibility**: Easy to add admin features without rebuilding Go services
-
-## Future Enhancements
-
-- Admin web UI (React-based dashboard)
-- Advanced analytics with charts
-- Automated email campaigns
-- A/B testing for email templates
-- Role-based access control (RBAC)
-- Audit logging for admin actions
+For Symfony-specific documentation, see:
+- https://symfony.com/doc/6.4/index.html
+- https://symfony.com/doc/current/doctrine.html
+- https://symfony.com/doc/current/routing.html
