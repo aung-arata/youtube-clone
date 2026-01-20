@@ -7,17 +7,24 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/aung-arata/youtube-clone/services/history-service/internal/models"
 	"github.com/gorilla/mux"
 )
 
 type HistoryHandler struct {
-	db *sql.DB
+	db         *sql.DB
+	httpClient *http.Client
 }
 
 func NewHistoryHandler(db *sql.DB) *HistoryHandler {
-	return &HistoryHandler{db: db}
+	return &HistoryHandler{
+		db: db,
+		httpClient: &http.Client{
+			Timeout: 5 * time.Second, // 5 second timeout for video service calls
+		},
+	}
 }
 
 // AddToHistory adds a video to user's watch history
@@ -131,9 +138,10 @@ func (h *HistoryHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 	for _, item := range history {
 		// Fetch video details from video service
 		videoURL := fmt.Sprintf("%s/videos/%d", videoServiceURL, item.VideoID)
-		resp, err := http.Get(videoURL)
+		resp, err := h.httpClient.Get(videoURL)
 		if err != nil {
 			// If we can't fetch video details, skip this item
+			// Note: when Get returns an error, resp is nil so no need to close
 			continue
 		}
 
