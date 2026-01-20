@@ -133,10 +133,9 @@ func (h *HistoryHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 		videoURL := fmt.Sprintf("%s/videos/%d", videoServiceURL, item.VideoID)
 		resp, err := http.Get(videoURL)
 		if err != nil {
-			// If we can't fetch video details, skip this item or return basic data
+			// If we can't fetch video details, skip this item
 			continue
 		}
-		defer resp.Body.Close()
 
 		if resp.StatusCode == http.StatusOK {
 			var video models.Video
@@ -147,6 +146,7 @@ func (h *HistoryHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 				})
 			}
 		}
+		resp.Body.Close() // Close immediately after use, not deferred
 	}
 
 	if enrichedHistory == nil {

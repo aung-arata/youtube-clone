@@ -169,6 +169,7 @@ services:
       history-db:
         condition: service_healthy
       video-service:
+        condition: service_started
     networks:
       - microservices_network
     restart: unless-stopped
