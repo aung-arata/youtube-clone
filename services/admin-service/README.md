@@ -1,6 +1,6 @@
-# Admin Service - Symfony 6.4
+# Admin Service - Symfony 8.0
 
-Admin Dashboard and CMS Service for YouTube Clone built with **Symfony 6.4 LTS**.
+Admin Dashboard and CMS Service for YouTube Clone built with **Symfony 8.0** (Latest Version).
 
 ## Features
 
@@ -29,11 +29,12 @@ Admin Dashboard and CMS Service for YouTube Clone built with **Symfony 6.4 LTS**
 
 ## Technology Stack
 
-- **Symfony 6.4 LTS** - Full-stack PHP framework
-- **Doctrine ORM** - Database abstraction and ORM
+- **Symfony 8.0** - Latest full-stack PHP framework
+- **Doctrine ORM 3.3** - Database abstraction and ORM
 - **PostgreSQL 15** - Database
 - **Symfony HTTP Client** - Integration with Go services
 - **Twig** - Template engine (ready for admin UI)
+- **PHP 8.2+** - Modern PHP with type safety
 
 ## Project Structure (Symfony Standard)
 
@@ -279,7 +280,7 @@ curl http://localhost:8085/reports/analytics?period=week
 4. **Dependency Injection**: Full DI container with autowiring
 5. **Debugging**: Symfony Profiler for development
 6. **Extensibility**: Large ecosystem of bundles
-7. **LTS Support**: Symfony 6.4 supported until November 2027
+7. **Latest Version**: Symfony 8.0 with modern PHP 8.2+ features
 
 ## Future Enhancements
 
@@ -309,7 +310,7 @@ vendor/bin/phpunit
          │
          ▼
 ┌─────────────────────────────┐
-│   Symfony 6.4 Application   │
+│   Symfony 8.0 Application   │
 │   ├─ Controllers (Routing)  │
 │   ├─ Services (Business)    │
 │   ├─ Entities (ORM)         │
@@ -328,6 +329,6 @@ vendor/bin/phpunit
 ## Support
 
 For Symfony-specific documentation, see:
-- https://symfony.com/doc/6.4/index.html
+- https://symfony.com/doc/current/index.html
 - https://symfony.com/doc/current/doctrine.html
 - https://symfony.com/doc/current/routing.html
