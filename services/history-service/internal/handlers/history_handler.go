@@ -3,7 +3,9 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/aung-arata/youtube-clone/services/history-service/internal/models"
@@ -63,7 +65,7 @@ func (h *HistoryHandler) AddToHistory(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(history)
 }
 
-// GetHistory returns user's watch history
+// GetHistory returns user's watch history with video details
 func (h *HistoryHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID, err := strconv.Atoi(vars["userId"])
@@ -119,10 +121,38 @@ func (h *HistoryHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 		history = append(history, item)
 	}
 
-	if history == nil {
-		history = []models.WatchHistory{}
+	// Enrich history with video details from video service
+	var enrichedHistory []models.VideoWithHistory
+	videoServiceURL := os.Getenv("VIDEO_SERVICE_URL")
+	if videoServiceURL == "" {
+		videoServiceURL = "http://video-service:8081" // default for docker-compose
+	}
+
+	for _, item := range history {
+		// Fetch video details from video service
+		videoURL := fmt.Sprintf("%s/videos/%d", videoServiceURL, item.VideoID)
+		resp, err := http.Get(videoURL)
+		if err != nil {
+			// If we can't fetch video details, skip this item or return basic data
+			continue
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode == http.StatusOK {
+			var video models.Video
+			if err := json.NewDecoder(resp.Body).Decode(&video); err == nil {
+				enrichedHistory = append(enrichedHistory, models.VideoWithHistory{
+					Video:     video,
+					WatchedAt: item.WatchedAt,
+				})
+			}
+		}
+	}
+
+	if enrichedHistory == nil {
+		enrichedHistory = []models.VideoWithHistory{}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(history)
+	json.NewEncoder(w).Encode(enrichedHistory)
 }

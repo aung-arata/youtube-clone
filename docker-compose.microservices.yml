@@ -161,12 +161,14 @@ services:
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_NAME: history_service_db
+      VIDEO_SERVICE_URL: http://video-service:8081
       PORT: 8084
     ports:
       - "8084:8084"
     depends_on:
       history-db:
         condition: service_healthy
+      video-service:
     networks:
       - microservices_network
     restart: unless-stopped
