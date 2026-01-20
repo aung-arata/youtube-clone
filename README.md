@@ -1,15 +1,18 @@
 # YouTube Clone
 
-A full-stack web-based YouTube clone built with **Microservices Architecture** using React, Tailwind CSS, Golang, and PostgreSQL.
+A full-stack web-based YouTube clone built with **Hybrid Microservices Architecture** using React, Tailwind CSS, Golang, PHP, and PostgreSQL.
+
+> **📊 Technology Stack Analysis**: See [PHP_GO_INTEGRATION_ANALYSIS.md](PHP_GO_INTEGRATION_ANALYSIS.md) for the comprehensive evaluation that led to our hybrid architecture.
 
 ## Architecture
 
-This project follows a **microservices architecture** pattern with:
-- **API Gateway** - Single entry point for all client requests
-- **Video Service** - Handles video management, views, likes/dislikes
-- **User Service** - Manages user profiles and authentication
-- **Comment Service** - Handles comment CRUD operations
-- **History Service** - Tracks user watch history
+This project follows a **hybrid microservices architecture** pattern with:
+- **API Gateway** (Go) - Single entry point for all client requests
+- **Video Service** (Go) - Handles video management, views, likes/dislikes
+- **User Service** (Go) - Manages user profiles and authentication
+- **Comment Service** (Go) - Handles comment CRUD operations
+- **History Service** (Go) - Tracks user watch history
+- **Admin Service** (PHP) - Admin dashboard, CMS, email templates, batch reports
 - **Separate databases** - Each service has its own PostgreSQL database for data isolation
 
 ### Architecture Diagram
@@ -21,36 +24,38 @@ This project follows a **microservices architecture** pattern with:
 └──────┬──────┘
        │
        ▼
-┌─────────────────────────────────────────────────┐
-│           API Gateway (Port 8080)               │
-│  - Request Routing                              │
-│  - CORS Handling                                │
-│  - Rate Limiting                                │
-│  - Request Logging                              │
-└──────┬──────────────┬──────────┬────────────┬───┘
+┌────────────────────────────────────────────────────────────┐
+│               API Gateway (Port 8080) [Go]                 │
+│  - Request Routing                                         │
+│  - CORS Handling                                           │
+│  - Rate Limiting                                           │
+│  - Request Logging                                         │
+└──────┬──────────────┬──────────┬────────────┬──────────────┘
        │              │          │            │
        ▼              ▼          ▼            ▼
-┌──────────┐   ┌──────────┐  ┌──────────┐  ┌──────────┐
-│  Video   │   │   User   │  │ Comment  │  │ History  │
-│ Service  │   │ Service  │  │ Service  │  │ Service  │
-│ (8081)   │   │ (8082)   │  │ (8083)   │  │ (8084)   │
-└────┬─────┘   └────┬─────┘  └────┬─────┘  └────┬─────┘
-     │              │              │              │
-     ▼              ▼              ▼              ▼
-┌──────────┐   ┌──────────┐  ┌──────────┐  ┌──────────┐
-│ Video DB │   │ User DB  │  │Comment DB│  │History DB│
-│(Postgres)│   │(Postgres)│  │(Postgres)│  │(Postgres)│
-└──────────┘   └──────────┘  └──────────┘  └──────────┘
+┌──────────┐   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+│  Video   │   │   User   │  │ Comment  │  │ History  │  │  Admin   │
+│ Service  │   │ Service  │  │ Service  │  │ Service  │  │ Service  │
+│ (8081)   │   │ (8082)   │  │ (8083)   │  │ (8084)   │  │ (8085)   │
+│  [Go]    │   │  [Go]    │  │  [Go]    │  │  [Go]    │  │  [PHP]   │
+└────┬─────┘   └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘
+     │              │              │              │              │
+     ▼              ▼              ▼              ▼              ▼
+┌──────────┐   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+│ Video DB │   │ User DB  │  │Comment DB│  │History DB│  │ Admin DB │
+│(Postgres)│   │(Postgres)│  │(Postgres)│  │(Postgres)│  │(Postgres)│
+└──────────┘   └──────────┘  └──────────┘  └──────────┘  └──────────┘
 ```
 
-### Benefits of Microservices Architecture
+### Benefits of Hybrid Microservices Architecture
 
 1. **Independent Scaling** - Each service can be scaled independently based on demand
-2. **Technology Flexibility** - Different services can use different technologies if needed
+2. **Technology Flexibility** - Use Go for performance-critical services, PHP for rapid admin development
 3. **Fault Isolation** - Failure in one service doesn't bring down the entire system
 4. **Independent Deployment** - Services can be deployed independently without affecting others
 5. **Team Autonomy** - Different teams can work on different services independently
 6. **Database per Service** - Each service owns its data, ensuring loose coupling
+7. **Best Tool for the Job** - Go for high-performance APIs, PHP for admin/CMS features
 
 For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.md).
 
@@ -122,37 +127,49 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 - **Vite** - Build tool and development server
 - **Nginx** - Web server for production
 
-### Backend - Microservices
-- **Golang** - Backend language for all services
-- **Gorilla Mux** - HTTP router
+### Backend - Microservices (Hybrid Go + PHP)
+- **Golang** - Backend language for performance-critical services
+- **PHP 8.2+** - Backend language for admin/CMS services
+- **Gorilla Mux** - HTTP router (Go services)
 - **PostgreSQL** - Database (one per service)
-- **lib/pq** - PostgreSQL driver
+- **lib/pq** - PostgreSQL driver (Go)
+- **PDO** - PostgreSQL driver (PHP)
 
 ### Microservices
-1. **API Gateway** (Port 8080)
+1. **API Gateway** (Port 8080) [Go]
    - Routes requests to appropriate services
    - CORS handling
    - Rate limiting (100 req/min)
    - Request logging
    
-2. **Video Service** (Port 8081)
+2. **Video Service** (Port 8081) [Go]
    - Video CRUD operations
    - Search functionality
    - View count tracking
    - Like/dislike management
    - Category management
    
-3. **User Service** (Port 8082)
+3. **User Service** (Port 8082) [Go]
    - User profile management
    - User CRUD operations
    
-4. **Comment Service** (Port 8083)
+4. **Comment Service** (Port 8083) [Go]
    - Comment CRUD operations
    - Video comment associations
    
-5. **History Service** (Port 8084)
+5. **History Service** (Port 8084) [Go]
    - Watch history tracking
    - History retrieval with pagination
+   
+6. **Admin Service** (Port 8085) [PHP]
+   - Admin dashboard and user management
+   - Content moderation queue
+   - Blog post management (CMS)
+   - Documentation management
+   - Help center articles
+   - Email template system
+   - Batch reporting and analytics
+   - Integration with all Go services
 
 ### Infrastructure
 - **Docker** - Containerization
@@ -263,6 +280,7 @@ youtube-clone/
    - User Service: http://localhost:8082
    - Comment Service: http://localhost:8083
    - History Service: http://localhost:8084
+   - Admin Service: http://localhost:8085
 
 ### Installation for Local Development
 
