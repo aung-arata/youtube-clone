@@ -329,6 +329,6 @@ vendor/bin/phpunit
 ## Support
 
 For Symfony-specific documentation, see:
-- https://symfony.com/doc/current/index.html
-- https://symfony.com/doc/current/doctrine.html
-- https://symfony.com/doc/current/routing.html
+- https://symfony.com/doc/8.0/index.html
+- https://symfony.com/doc/8.0/doctrine.html
+- https://symfony.com/doc/8.0/routing.html
