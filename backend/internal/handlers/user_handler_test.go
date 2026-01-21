@@ -23,8 +23,8 @@ func TestGetUser(t *testing.T) {
 	handler := NewUserHandler(db)
 
 	now := time.Now()
-	rows := sqlmock.NewRows([]string{"id", "username", "email", "avatar", "created_at", "updated_at"}).
-		AddRow(1, "testuser", "test@example.com", "https://example.com/avatar.jpg", now, now)
+	rows := sqlmock.NewRows([]string{"id", "username", "email", "avatar", "plan_id", "created_at", "updated_at"}).
+		AddRow(1, "testuser", "test@example.com", "https://example.com/avatar.jpg", nil, now, now)
 
 	mock.ExpectQuery("SELECT (.+) FROM users WHERE id").
 		WithArgs(1).
@@ -62,8 +62,8 @@ func TestCreateUser(t *testing.T) {
 	handler := NewUserHandler(db)
 
 	now := time.Now()
-	rows := sqlmock.NewRows([]string{"id", "username", "email", "avatar", "created_at", "updated_at"}).
-		AddRow(1, "newuser", "new@example.com", "", now, now)
+	rows := sqlmock.NewRows([]string{"id", "username", "email", "avatar", "plan_id", "created_at", "updated_at"}).
+		AddRow(1, "newuser", "new@example.com", "", nil, now, now)
 
 	mock.ExpectQuery("INSERT INTO users").
 		WithArgs("newuser", "new@example.com", "").
@@ -99,8 +99,8 @@ func TestUpdateUser(t *testing.T) {
 	handler := NewUserHandler(db)
 
 	now := time.Now()
-	rows := sqlmock.NewRows([]string{"id", "username", "email", "avatar", "created_at", "updated_at"}).
-		AddRow(1, "updateduser", "updated@example.com", "https://example.com/new.jpg", now, now)
+	rows := sqlmock.NewRows([]string{"id", "username", "email", "avatar", "plan_id", "created_at", "updated_at"}).
+		AddRow(1, "updateduser", "updated@example.com", "https://example.com/new.jpg", nil, now, now)
 
 	mock.ExpectQuery("UPDATE users").
 		WithArgs("updateduser", "updated@example.com", "https://example.com/new.jpg", 1).
