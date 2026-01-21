@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -34,9 +35,9 @@ func InitDB() (*sql.DB, error) {
 	}
 
 	// Configure connection pool
-	db.SetMaxOpenConns(25)                 // Maximum number of open connections
-	db.SetMaxIdleConns(5)                  // Maximum number of idle connections
-	db.SetConnMaxLifetime(5 * 60 * 1000)   // Maximum lifetime of a connection (5 minutes)
+	db.SetMaxOpenConns(25)              // Maximum number of open connections
+	db.SetMaxIdleConns(5)               // Maximum number of idle connections
+	db.SetConnMaxLifetime(5 * time.Minute) // Maximum lifetime of a connection (5 minutes)
 
 	// Run migrations
 	if err := runMigrations(db); err != nil {

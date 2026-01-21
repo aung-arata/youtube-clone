@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/aung-arata/youtube-clone/backend/internal/models"
 	"github.com/gorilla/mux"
@@ -49,8 +50,8 @@ func (h *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request) 
 	var sub models.Subscription
 	err = h.db.QueryRow(query, userID, req.ChannelName).Scan(&sub.ID, &sub.UserID, &sub.ChannelName, &sub.CreatedAt)
 	if err != nil {
-		// Check if already subscribed
-		if err.Error() == "pq: duplicate key value violates unique constraint \"subscriptions_user_id_channel_name_key\"" {
+		// Check if already subscribed (duplicate key constraint violation)
+		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "unique constraint") {
 			http.Error(w, "Already subscribed to this channel", http.StatusConflict)
 			return
 		}

@@ -263,7 +263,11 @@ func (h *PlaylistHandler) AddVideoToPlaylist(w http.ResponseWriter, r *http.Requ
 
 	// Get next position
 	var maxPosition int
-	h.db.QueryRow("SELECT COALESCE(MAX(position), -1) FROM playlist_videos WHERE playlist_id = $1", playlistID).Scan(&maxPosition)
+	err = h.db.QueryRow("SELECT COALESCE(MAX(position), -1) FROM playlist_videos WHERE playlist_id = $1", playlistID).Scan(&maxPosition)
+	if err != nil && err != sql.ErrNoRows {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	query := `
 		INSERT INTO playlist_videos (playlist_id, video_id, position)
