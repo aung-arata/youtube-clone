@@ -567,3 +567,416 @@ resp, err = http.Post(
     bytes.NewBuffer(body),
 )
 ```
+
+---
+
+## Subscriptions
+
+### POST /users/{userId}/subscriptions
+Subscribe to a channel.
+
+**Path Parameters:**
+- `userId` (required): User ID
+
+**Request Body:**
+```json
+{
+  "channel_name": "Code Master"
+}
+```
+
+**Example Request:**
+```bash
+curl -X POST http://localhost:8080/api/users/1/subscriptions \
+  -H "Content-Type: application/json" \
+  -d '{"channel_name":"Code Master"}'
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "channel_name": "Code Master",
+  "created_at": "2024-01-10T10:30:00Z"
+}
+```
+
+**Status Codes:**
+- `201 Created` - Subscribed successfully
+- `400 Bad Request` - Invalid input
+- `409 Conflict` - Already subscribed
+- `500 Internal Server Error` - Database error
+
+---
+
+### DELETE /users/{userId}/subscriptions/{channelName}
+Unsubscribe from a channel.
+
+**Path Parameters:**
+- `userId` (required): User ID
+- `channelName` (required): Channel name
+
+**Example Request:**
+```bash
+curl -X DELETE http://localhost:8080/api/users/1/subscriptions/Code%20Master
+```
+
+**Status Codes:**
+- `204 No Content` - Unsubscribed successfully
+- `404 Not Found` - Subscription not found
+- `500 Internal Server Error` - Database error
+
+---
+
+### GET /users/{userId}/subscriptions
+Get all subscriptions for a user.
+
+**Path Parameters:**
+- `userId` (required): User ID
+
+**Example Request:**
+```bash
+curl http://localhost:8080/api/users/1/subscriptions
+```
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "user_id": 1,
+    "channel_name": "Code Master",
+    "created_at": "2024-01-10T10:30:00Z"
+  },
+  {
+    "id": 2,
+    "user_id": 1,
+    "channel_name": "Tech Tutorials",
+    "created_at": "2024-01-11T14:20:00Z"
+  }
+]
+```
+
+**Status Codes:**
+- `200 OK` - Subscriptions retrieved successfully
+- `500 Internal Server Error` - Database error
+
+---
+
+### GET /users/{userId}/subscriptions/{channelName}
+Check if user is subscribed to a channel.
+
+**Path Parameters:**
+- `userId` (required): User ID
+- `channelName` (required): Channel name
+
+**Example Request:**
+```bash
+curl http://localhost:8080/api/users/1/subscriptions/Code%20Master
+```
+
+**Response:**
+```json
+{
+  "subscribed": true
+}
+```
+
+**Status Codes:**
+- `200 OK` - Status retrieved successfully
+- `500 Internal Server Error` - Database error
+
+---
+
+## Playlists
+
+### POST /users/{userId}/playlists
+Create a new playlist.
+
+**Path Parameters:**
+- `userId` (required): User ID
+
+**Request Body:**
+```json
+{
+  "name": "My Favorite Videos",
+  "description": "A collection of my favorite tutorials"
+}
+```
+
+**Example Request:**
+```bash
+curl -X POST http://localhost:8080/api/users/1/playlists \
+  -H "Content-Type: application/json" \
+  -d '{"name":"My Favorite Videos","description":"A collection of my favorite tutorials"}'
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "name": "My Favorite Videos",
+  "description": "A collection of my favorite tutorials",
+  "created_at": "2024-01-10T10:30:00Z",
+  "updated_at": "2024-01-10T10:30:00Z"
+}
+```
+
+**Status Codes:**
+- `201 Created` - Playlist created successfully
+- `400 Bad Request` - Invalid input
+- `500 Internal Server Error` - Database error
+
+---
+
+### GET /users/{userId}/playlists
+Get all playlists for a user.
+
+**Path Parameters:**
+- `userId` (required): User ID
+
+**Example Request:**
+```bash
+curl http://localhost:8080/api/users/1/playlists
+```
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "user_id": 1,
+    "name": "My Favorite Videos",
+    "description": "A collection of my favorite tutorials",
+    "created_at": "2024-01-10T10:30:00Z",
+    "updated_at": "2024-01-10T10:30:00Z"
+  }
+]
+```
+
+**Status Codes:**
+- `200 OK` - Playlists retrieved successfully
+- `500 Internal Server Error` - Database error
+
+---
+
+### GET /playlists/{id}
+Get a specific playlist with its videos.
+
+**Path Parameters:**
+- `id` (required): Playlist ID
+
+**Example Request:**
+```bash
+curl http://localhost:8080/api/playlists/1
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "name": "My Favorite Videos",
+  "description": "A collection of my favorite tutorials",
+  "created_at": "2024-01-10T10:30:00Z",
+  "updated_at": "2024-01-10T10:30:00Z",
+  "videos": [
+    {
+      "id": 5,
+      "title": "React Tutorial",
+      "description": "Learn React basics",
+      "url": "https://example.com/video.mp4",
+      "thumbnail": "https://example.com/thumb.jpg",
+      "channel_name": "Code Master",
+      "channel_avatar": "https://example.com/avatar.jpg",
+      "views": 10000,
+      "likes": 500,
+      "dislikes": 10,
+      "category": "Education",
+      "duration": "15:30",
+      "uploaded_at": "2024-01-10T10:30:00Z",
+      "created_at": "2024-01-10T10:30:00Z",
+      "updated_at": "2024-01-10T10:30:00Z"
+    }
+  ]
+}
+```
+
+**Status Codes:**
+- `200 OK` - Playlist retrieved successfully
+- `404 Not Found` - Playlist not found
+- `500 Internal Server Error` - Database error
+
+---
+
+### PUT /playlists/{id}
+Update a playlist.
+
+**Path Parameters:**
+- `id` (required): Playlist ID
+
+**Request Body:**
+```json
+{
+  "name": "Updated Playlist Name",
+  "description": "Updated description"
+}
+```
+
+**Example Request:**
+```bash
+curl -X PUT http://localhost:8080/api/playlists/1 \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Updated Playlist Name","description":"Updated description"}'
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "name": "Updated Playlist Name",
+  "description": "Updated description",
+  "created_at": "2024-01-10T10:30:00Z",
+  "updated_at": "2024-01-10T12:00:00Z"
+}
+```
+
+**Status Codes:**
+- `200 OK` - Playlist updated successfully
+- `400 Bad Request` - Invalid input
+- `404 Not Found` - Playlist not found
+- `500 Internal Server Error` - Database error
+
+---
+
+### DELETE /playlists/{id}
+Delete a playlist.
+
+**Path Parameters:**
+- `id` (required): Playlist ID
+
+**Example Request:**
+```bash
+curl -X DELETE http://localhost:8080/api/playlists/1
+```
+
+**Status Codes:**
+- `204 No Content` - Playlist deleted successfully
+- `404 Not Found` - Playlist not found
+- `500 Internal Server Error` - Database error
+
+---
+
+### POST /playlists/{id}/videos
+Add a video to a playlist.
+
+**Path Parameters:**
+- `id` (required): Playlist ID
+
+**Request Body:**
+```json
+{
+  "video_id": 5
+}
+```
+
+**Example Request:**
+```bash
+curl -X POST http://localhost:8080/api/playlists/1/videos \
+  -H "Content-Type: application/json" \
+  -d '{"video_id":5}'
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "playlist_id": 1,
+  "video_id": 5,
+  "position": 0,
+  "added_at": "2024-01-10T10:30:00Z"
+}
+```
+
+**Status Codes:**
+- `201 Created` - Video added successfully
+- `400 Bad Request` - Invalid input
+- `409 Conflict` - Video already in playlist
+- `500 Internal Server Error` - Database error
+
+---
+
+### DELETE /playlists/{id}/videos/{videoId}
+Remove a video from a playlist.
+
+**Path Parameters:**
+- `id` (required): Playlist ID
+- `videoId` (required): Video ID
+
+**Example Request:**
+```bash
+curl -X DELETE http://localhost:8080/api/playlists/1/videos/5
+```
+
+**Status Codes:**
+- `204 No Content` - Video removed successfully
+- `404 Not Found` - Video not in playlist
+- `500 Internal Server Error` - Database error
+
+---
+
+## Video Recommendations
+
+### GET /videos/{id}/recommendations
+Get recommended videos based on a given video.
+
+**Path Parameters:**
+- `id` (required): Video ID
+
+**Query Parameters:**
+- `limit` (optional): Number of recommendations (default: 10, max: 50)
+
+**Example Request:**
+```bash
+curl http://localhost:8080/api/videos/1/recommendations
+
+# With custom limit
+curl "http://localhost:8080/api/videos/1/recommendations?limit=5"
+```
+
+**Response:**
+```json
+[
+  {
+    "id": 3,
+    "title": "Advanced React Patterns",
+    "description": "Learn advanced React patterns",
+    "url": "https://example.com/video3.mp4",
+    "thumbnail": "https://example.com/thumb3.jpg",
+    "channel_name": "Code Master",
+    "channel_avatar": "https://example.com/avatar.jpg",
+    "views": 8000,
+    "likes": 400,
+    "dislikes": 5,
+    "category": "Education",
+    "duration": "20:15",
+    "uploaded_at": "2024-01-12T10:30:00Z",
+    "created_at": "2024-01-12T10:30:00Z",
+    "updated_at": "2024-01-12T10:30:00Z"
+  }
+]
+```
+
+**Algorithm:**
+- Returns videos from the same category
+- Excludes the current video
+- Sorted by views (descending) and upload date
+
+**Status Codes:**
+- `200 OK` - Recommendations retrieved successfully
+- `404 Not Found` - Video not found
+- `500 Internal Server Error` - Database error
+
