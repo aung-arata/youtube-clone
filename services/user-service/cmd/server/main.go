@@ -28,6 +28,16 @@ func main() {
 	r.HandleFunc("/users/{id}", userHandler.GetUser).Methods("GET")
 	r.HandleFunc("/users/{id}", userHandler.UpdateUser).Methods("PUT")
 	
+	// Plan routes
+	planHandler := handlers.NewPlanHandler(db)
+	r.HandleFunc("/plans", planHandler.GetPlans).Methods("GET")
+	r.HandleFunc("/plans/{id}", planHandler.GetPlan).Methods("GET")
+	r.HandleFunc("/plans", planHandler.CreatePlan).Methods("POST")
+	r.HandleFunc("/plans/{id}", planHandler.UpdatePlan).Methods("PUT")
+	r.HandleFunc("/plans/{id}", planHandler.DeletePlan).Methods("DELETE")
+	r.HandleFunc("/users/{userId}/plan", planHandler.GetUserPlan).Methods("GET")
+	r.HandleFunc("/users/{userId}/plan", planHandler.UpdateUserPlan).Methods("PUT")
+	
 	// Health check
 	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

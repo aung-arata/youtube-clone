@@ -55,6 +55,16 @@ func main() {
 	api.HandleFunc("/users/{userId}/history", historyHandler.AddToHistory).Methods("POST")
 	api.HandleFunc("/users/{userId}/history", historyHandler.GetHistory).Methods("GET")
 	
+	// Plan routes
+	planHandler := handlers.NewPlanHandler(db)
+	api.HandleFunc("/plans", planHandler.GetPlans).Methods("GET")
+	api.HandleFunc("/plans/{id}", planHandler.GetPlan).Methods("GET")
+	api.HandleFunc("/plans", planHandler.CreatePlan).Methods("POST")
+	api.HandleFunc("/plans/{id}", planHandler.UpdatePlan).Methods("PUT")
+	api.HandleFunc("/plans/{id}", planHandler.DeletePlan).Methods("DELETE")
+	api.HandleFunc("/users/{userId}/plan", planHandler.GetUserPlan).Methods("GET")
+	api.HandleFunc("/users/{userId}/plan", planHandler.UpdateUserPlan).Methods("PUT")
+	
 	// Health check
 	api.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
