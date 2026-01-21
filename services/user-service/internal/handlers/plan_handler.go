@@ -19,6 +19,17 @@ func NewPlanHandler(db *sql.DB) *PlanHandler {
 	return &PlanHandler{db: db}
 }
 
+// isValidVideoQuality checks if the video quality string is valid
+func isValidVideoQuality(quality string) bool {
+	validQualities := map[string]bool{
+		"480p":  true,
+		"720p":  true,
+		"1080p": true,
+		"4K":    true,
+	}
+	return validQualities[quality]
+}
+
 // GetPlans returns all available plans
 func (h *PlanHandler) GetPlans(w http.ResponseWriter, r *http.Request) {
 	query := `
@@ -101,6 +112,10 @@ func (h *PlanHandler) CreatePlan(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Price must be non-negative", http.StatusBadRequest)
 		return
 	}
+	if p.MaxVideoQuality != "" && !isValidVideoQuality(p.MaxVideoQuality) {
+		http.Error(w, "Invalid video quality. Must be one of: 480p, 720p, 1080p, 4K", http.StatusBadRequest)
+		return
+	}
 
 	query := `
 		INSERT INTO plans (name, price, max_video_quality, max_uploads_per_month, ads_free)
@@ -143,6 +158,10 @@ func (h *PlanHandler) UpdatePlan(w http.ResponseWriter, r *http.Request) {
 	}
 	if p.Price < 0 {
 		http.Error(w, "Price must be non-negative", http.StatusBadRequest)
+		return
+	}
+	if p.MaxVideoQuality != "" && !isValidVideoQuality(p.MaxVideoQuality) {
+		http.Error(w, "Invalid video quality. Must be one of: 480p, 720p, 1080p, 4K", http.StatusBadRequest)
 		return
 	}
 
