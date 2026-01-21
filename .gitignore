@@ -12,6 +12,8 @@ build/
 *.exe
 *.out
 /backend/server
+/backend/main
+/services/*/main
 /server
 
 # Database

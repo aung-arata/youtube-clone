@@ -25,6 +25,7 @@ type User struct {
 	Username  string    `json:"username"`
 	Email     string    `json:"email"`
 	Avatar    string    `json:"avatar"`
+	PlanID    *int      `json:"plan_id,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -43,4 +44,15 @@ type WatchHistory struct {
 	UserID    int       `json:"user_id"`
 	VideoID   int       `json:"video_id"`
 	WatchedAt time.Time `json:"watched_at"`
+}
+
+type Plan struct {
+	ID                 int       `json:"id"`
+	Name               string    `json:"name"`
+	Price              float64   `json:"price"`
+	MaxVideoQuality    string    `json:"max_video_quality"`
+	MaxUploadsPerMonth int       `json:"max_uploads_per_month"`
+	AdsFree            bool      `json:"ads_free"`
+	CreatedAt          time.Time `json:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at"`
 }

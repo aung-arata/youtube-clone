@@ -29,13 +29,13 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `
-		SELECT id, username, email, avatar, created_at, updated_at
+		SELECT id, username, email, avatar, plan_id, created_at, updated_at
 		FROM users
 		WHERE id = $1
 	`
 
 	var u models.User
-	err = h.db.QueryRow(query, id).Scan(&u.ID, &u.Username, &u.Email, &u.Avatar, &u.CreatedAt, &u.UpdatedAt)
+	err = h.db.QueryRow(query, id).Scan(&u.ID, &u.Username, &u.Email, &u.Avatar, &u.PlanID, &u.CreatedAt, &u.UpdatedAt)
 
 	if err == sql.ErrNoRows {
 		http.Error(w, "User not found", http.StatusNotFound)
@@ -78,11 +78,11 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		UPDATE users 
 		SET username = $1, email = $2, avatar = $3, updated_at = CURRENT_TIMESTAMP
 		WHERE id = $4
-		RETURNING id, username, email, avatar, created_at, updated_at
+		RETURNING id, username, email, avatar, plan_id, created_at, updated_at
 	`
 
 	err = h.db.QueryRow(query, u.Username, u.Email, u.Avatar, id).Scan(
-		&u.ID, &u.Username, &u.Email, &u.Avatar, &u.CreatedAt, &u.UpdatedAt)
+		&u.ID, &u.Username, &u.Email, &u.Avatar, &u.PlanID, &u.CreatedAt, &u.UpdatedAt)
 
 	if err == sql.ErrNoRows {
 		http.Error(w, "User not found", http.StatusNotFound)
@@ -117,11 +117,11 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	query := `
 		INSERT INTO users (username, email, avatar)
 		VALUES ($1, $2, $3)
-		RETURNING id, username, email, avatar, created_at, updated_at
+		RETURNING id, username, email, avatar, plan_id, created_at, updated_at
 	`
 
 	err := h.db.QueryRow(query, u.Username, u.Email, u.Avatar).Scan(
-		&u.ID, &u.Username, &u.Email, &u.Avatar, &u.CreatedAt, &u.UpdatedAt)
+		&u.ID, &u.Username, &u.Email, &u.Avatar, &u.PlanID, &u.CreatedAt, &u.UpdatedAt)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
