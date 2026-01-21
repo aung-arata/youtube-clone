@@ -37,6 +37,13 @@ func main() {
 	r.HandleFunc("/plans/{id}", planHandler.DeletePlan).Methods("DELETE")
 	r.HandleFunc("/users/{userId}/plan", planHandler.GetUserPlan).Methods("GET")
 	r.HandleFunc("/users/{userId}/plan", planHandler.UpdateUserPlan).Methods("PUT")
+
+	// Subscription routes
+	subscriptionHandler := handlers.NewSubscriptionHandler(db)
+	r.HandleFunc("/users/{userId}/subscriptions", subscriptionHandler.GetUserSubscriptions).Methods("GET")
+	r.HandleFunc("/users/{userId}/subscriptions", subscriptionHandler.Subscribe).Methods("POST")
+	r.HandleFunc("/users/{userId}/subscriptions/{channelName}", subscriptionHandler.CheckSubscription).Methods("GET")
+	r.HandleFunc("/users/{userId}/subscriptions/{channelName}", subscriptionHandler.Unsubscribe).Methods("DELETE")
 	
 	// Health check
 	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

@@ -33,6 +33,11 @@ func InitDB() (*sql.DB, error) {
 		return nil, err
 	}
 
+	// Configure connection pool
+	db.SetMaxOpenConns(25)                 // Maximum number of open connections
+	db.SetMaxIdleConns(5)                  // Maximum number of idle connections
+	db.SetConnMaxLifetime(5 * 60 * 1000)   // Maximum lifetime of a connection (5 minutes)
+
 	// Run migrations
 	if err := runMigrations(db); err != nil {
 		return nil, err
@@ -91,6 +96,17 @@ func runMigrations(db *sql.DB) error {
 		(3, 'Premium', 9.99, '1080p', 100, TRUE),
 		(4, 'Enterprise', 19.99, '4K', -1, TRUE)
 	ON CONFLICT (id) DO NOTHING;
+
+	CREATE TABLE IF NOT EXISTS subscriptions (
+		id SERIAL PRIMARY KEY,
+		user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+		channel_name VARCHAR(100) NOT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		UNIQUE(user_id, channel_name)
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions (user_id);
+	CREATE INDEX IF NOT EXISTS idx_subscriptions_channel_name ON subscriptions (channel_name);
 	`
 
 	_, err := db.Exec(query)

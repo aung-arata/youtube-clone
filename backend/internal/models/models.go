@@ -56,3 +56,32 @@ type Plan struct {
 	CreatedAt          time.Time `json:"created_at"`
 	UpdatedAt          time.Time `json:"updated_at"`
 }
+
+type Subscription struct {
+	ID          int       `json:"id"`
+	UserID      int       `json:"user_id"`
+	ChannelName string    `json:"channel_name"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+type Playlist struct {
+	ID          int       `json:"id"`
+	UserID      int       `json:"user_id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type PlaylistVideo struct {
+	ID         int       `json:"id"`
+	PlaylistID int       `json:"playlist_id"`
+	VideoID    int       `json:"video_id"`
+	Position   int       `json:"position"`
+	AddedAt    time.Time `json:"added_at"`
+}
+
+type PlaylistWithVideos struct {
+	Playlist
+	Videos []Video `json:"videos"`
+}

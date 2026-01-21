@@ -33,6 +33,11 @@ func InitDB() (*sql.DB, error) {
 		return nil, err
 	}
 
+	// Configure connection pool
+	db.SetMaxOpenConns(25)                 // Maximum number of open connections
+	db.SetMaxIdleConns(5)                  // Maximum number of idle connections
+	db.SetConnMaxLifetime(5 * 60 * 1000)   // Maximum lifetime of a connection (5 minutes)
+
 	// Run migrations
 	if err := runMigrations(db); err != nil {
 		return nil, err
@@ -75,6 +80,28 @@ func runMigrations(db *sql.DB) error {
 	CREATE INDEX IF NOT EXISTS idx_videos_channel_name ON videos (channel_name);
 	CREATE INDEX IF NOT EXISTS idx_videos_uploaded_at ON videos (uploaded_at DESC);
 	CREATE INDEX IF NOT EXISTS idx_videos_category ON videos (category);
+
+	CREATE TABLE IF NOT EXISTS playlists (
+		id SERIAL PRIMARY KEY,
+		user_id INTEGER NOT NULL,
+		name VARCHAR(255) NOT NULL,
+		description TEXT,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE TABLE IF NOT EXISTS playlist_videos (
+		id SERIAL PRIMARY KEY,
+		playlist_id INTEGER REFERENCES playlists(id) ON DELETE CASCADE,
+		video_id INTEGER REFERENCES videos(id) ON DELETE CASCADE,
+		position INTEGER NOT NULL DEFAULT 0,
+		added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		UNIQUE(playlist_id, video_id)
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_playlists_user_id ON playlists (user_id);
+	CREATE INDEX IF NOT EXISTS idx_playlist_videos_playlist_id ON playlist_videos (playlist_id);
+	CREATE INDEX IF NOT EXISTS idx_playlist_videos_position ON playlist_videos (position);
 	`
 
 	_, err := db.Exec(query)
