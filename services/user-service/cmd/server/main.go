@@ -8,6 +8,7 @@ import (
 
 	"github.com/aung-arata/youtube-clone/services/user-service/internal/database"
 	"github.com/aung-arata/youtube-clone/services/user-service/internal/handlers"
+	"github.com/aung-arata/youtube-clone/services/user-service/internal/middleware"
 	"github.com/gorilla/mux"
 )
 
@@ -21,6 +22,17 @@ func main() {
 
 	// Create router
 	r := mux.NewRouter()
+
+	// Auth routes (public)
+	authHandler := handlers.NewAuthHandler(db)
+	r.HandleFunc("/auth/signup", authHandler.Signup).Methods("POST")
+	r.HandleFunc("/auth/login", authHandler.Login).Methods("POST")
+	r.HandleFunc("/auth/refresh", authHandler.RefreshToken).Methods("POST")
+	
+	// Protected auth route
+	protectedAuth := r.PathPrefix("/auth").Subrouter()
+	protectedAuth.Use(middleware.AuthMiddleware)
+	protectedAuth.HandleFunc("/me", authHandler.GetCurrentUser).Methods("GET")
 
 	// User routes
 	userHandler := handlers.NewUserHandler(db)

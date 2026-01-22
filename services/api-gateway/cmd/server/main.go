@@ -26,6 +26,9 @@ func main() {
 	// API routes
 	api := r.PathPrefix("/api").Subrouter()
 
+	// Auth routes - proxy to user-service (public routes)
+	api.PathPrefix("/auth").HandlerFunc(proxyToService(userServiceURL, "/auth"))
+
 	// Video routes - proxy to video-service
 	api.PathPrefix("/videos").HandlerFunc(proxyToService(videoServiceURL, "/videos"))
 	api.PathPrefix("/playlists").HandlerFunc(proxyToService(videoServiceURL, "/playlists"))
