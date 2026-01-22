@@ -29,3 +29,6 @@ go.work
 
 # Logs
 *.log
+
+# Uploaded files
+uploads/

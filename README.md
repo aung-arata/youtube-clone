@@ -67,6 +67,10 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 - 🚀 Fast backend API with Golang
 - 💾 PostgreSQL database for data persistence
 - 📱 Responsive design for all devices
+- 🔐 **JWT-based Authentication** - Secure user authentication and authorization
+- 🔑 **User Registration & Login** - Signup with email, password hashing with bcrypt
+- 📹 **Video Upload** - File upload with multipart form handling (videos + thumbnails)
+- 🗂️ **File Storage** - Local file storage with size/format validation
 - 🎥 Video listing and playback
 - 🔍 Full-text search functionality
 - 🔎 Enhanced search with filters (duration, upload date, sorting)
@@ -91,6 +95,13 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 ### Backend Features (Microservices)
 - 🏗️ **Microservices Architecture** with independent services
 - 🚪 **API Gateway** for routing and middleware
+- 🔐 **JWT Authentication** - Secure token-based authentication
+- 🔑 **User Authentication API** - Signup, login, token refresh, current user
+- 🛡️ **Authorization Middleware** - Protected routes with role-based access
+- 📹 **Video Upload API** - Multipart file upload with validation
+- 🗂️ **File Storage Service** - Handles video and thumbnail storage
+- ✅ **File Validation** - Size limits (500MB videos, 5MB thumbnails) and format checks
+- 🔒 **Password Hashing** - Bcrypt for secure password storage
 - ✅ Input validation and error handling
 - 🔒 Rate limiting middleware (100 requests/minute)
 - 📝 Request logging middleware
@@ -112,6 +123,7 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 - 🗄️ **Database per Service** pattern for data isolation
 - 🔄 **Connection Pooling** optimization for all services
 - 🧪 Comprehensive unit tests
+- 🧪 API integration tests for auth and upload
 - 🐳 Docker support with multi-stage builds
 
 ### Frontend Features
@@ -126,6 +138,8 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 - 🏷️ Category filter with horizontal scroll
 - 👤 User profile management component
 - 📜 Watch history component and tracking
+- 🧪 **Component Tests** - Vitest + React Testing Library (22 tests passing)
+- ✅ **Test Coverage** - VideoCard, Header, Sidebar components
 
 ### DevOps & Code Quality
 - 🏗️ **Microservices Architecture** with service isolation
@@ -135,6 +149,8 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 - 📦 Multi-stage Docker builds for optimization
 - 🗄️ Separate PostgreSQL databases for each service
 - 🧪 Backend unit tests with sqlmock
+- 🧪 Frontend component tests with Vitest
+- 🧪 API integration tests for critical flows
 - 🔍 Linting configuration (golangci-lint)
 - 📋 Environment-based configuration
 
@@ -429,6 +445,118 @@ go build -o server cmd/server/main.go
 ```
 
 ## API Endpoints
+
+### Authentication Endpoints
+
+#### Signup
+```http
+POST /api/auth/signup
+Content-Type: application/json
+
+{
+  "username": "johndoe",
+  "email": "john@example.com",
+  "password": "password123",
+  "avatar": "https://example.com/avatar.jpg" (optional)
+}
+
+Response: 201 Created
+{
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "id": 1,
+    "username": "johndoe",
+    "email": "john@example.com",
+    "avatar": "https://example.com/avatar.jpg",
+    "role": "user",
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+#### Login
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
+
+Response: 200 OK
+{
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": { ... }
+}
+```
+
+#### Refresh Token
+```http
+POST /api/auth/refresh
+Authorization: Bearer {token}
+
+Response: 200 OK
+{
+  "token": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+
+#### Get Current User
+```http
+GET /api/auth/me
+Authorization: Bearer {token}
+
+Response: 200 OK
+{
+  "id": 1,
+  "username": "johndoe",
+  "email": "john@example.com",
+  "avatar": "https://example.com/avatar.jpg",
+  "role": "user"
+}
+```
+
+### Video Upload Endpoints
+
+#### Upload Video
+```http
+POST /api/upload/video
+Authorization: Bearer {token}
+Content-Type: multipart/form-data
+
+Form Fields:
+- title: "My Video Title" (required)
+- description: "Video description" (optional)
+- category: "Technology" (optional)
+- channel_name: "My Channel" (required)
+- channel_avatar: "https://example.com/avatar.jpg" (optional)
+- duration: "10:30" (optional)
+- video: (file, required) - Max 500MB, formats: .mp4, .webm, .mkv, .mov, .avi
+- thumbnail: (file, optional) - Max 5MB, formats: .jpg, .jpeg, .png, .webp
+
+Response: 201 Created
+{
+  "id": 1,
+  "title": "My Video Title",
+  "url": "/uploads/videos/my_video_1234567890.mp4",
+  "thumbnail": "/uploads/thumbnails/thumbnail_1234567890.jpg",
+  ...
+}
+```
+
+#### Delete Video
+```http
+DELETE /api/upload/video/delete?id={video_id}
+Authorization: Bearer {token}
+
+Response: 200 OK
+{
+  "message": "Video deleted successfully"
+}
+```
+
+### Video Endpoints
 
 All API requests go through the **API Gateway** at `http://localhost:8080/api`
 

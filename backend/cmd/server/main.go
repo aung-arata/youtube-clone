@@ -9,6 +9,7 @@ import (
 	"github.com/aung-arata/youtube-clone/backend/internal/database"
 	"github.com/aung-arata/youtube-clone/backend/internal/handlers"
 	"github.com/aung-arata/youtube-clone/backend/internal/middleware"
+	"github.com/aung-arata/youtube-clone/backend/internal/storage"
 	"github.com/gorilla/mux"
 )
 
@@ -20,11 +21,38 @@ func main() {
 	}
 	defer db.Close()
 
+	// Initialize file storage
+	fileStorage, err := storage.NewFileStorage("")
+	if err != nil {
+		log.Fatal("Failed to initialize file storage:", err)
+	}
+
 	// Create router
 	r := mux.NewRouter()
 
+	// Serve uploaded files
+	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))))
+
 	// API routes
 	api := r.PathPrefix("/api").Subrouter()
+	
+	// Auth routes (public)
+	authHandler := handlers.NewAuthHandler(db)
+	api.HandleFunc("/auth/signup", authHandler.Signup).Methods("POST")
+	api.HandleFunc("/auth/login", authHandler.Login).Methods("POST")
+	api.HandleFunc("/auth/refresh", authHandler.RefreshToken).Methods("POST")
+	
+	// Protected auth route
+	protectedAuth := api.PathPrefix("/auth").Subrouter()
+	protectedAuth.Use(middleware.AuthMiddleware)
+	protectedAuth.HandleFunc("/me", authHandler.GetCurrentUser).Methods("GET")
+	
+	// Upload routes (protected)
+	uploadHandler := handlers.NewUploadHandler(db, fileStorage)
+	protectedUpload := api.PathPrefix("/upload").Subrouter()
+	protectedUpload.Use(middleware.AuthMiddleware)
+	protectedUpload.HandleFunc("/video", uploadHandler.UploadVideo).Methods("POST")
+	protectedUpload.HandleFunc("/video/delete", uploadHandler.DeleteVideo).Methods("DELETE")
 	
 	// Video routes
 	videoHandler := handlers.NewVideoHandler(db)
