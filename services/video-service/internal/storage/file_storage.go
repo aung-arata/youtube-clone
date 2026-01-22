@@ -38,7 +38,7 @@ basePath = UploadPath
 }
 
 // Create base directory if it doesn't exist
-if err := os.MkdirAll(basePath, 0755); err != nil {
+if err := os.MkdirAll(basePath, 0750); err != nil {
 return nil, fmt.Errorf("failed to create upload directory: %w", err)
 }
 
@@ -46,11 +46,11 @@ return nil, fmt.Errorf("failed to create upload directory: %w", err)
 videosPath := filepath.Join(basePath, "videos")
 thumbnailsPath := filepath.Join(basePath, "thumbnails")
 
-if err := os.MkdirAll(videosPath, 0755); err != nil {
+if err := os.MkdirAll(videosPath, 0750); err != nil {
 return nil, fmt.Errorf("failed to create videos directory: %w", err)
 }
 
-if err := os.MkdirAll(thumbnailsPath, 0755); err != nil {
+if err := os.MkdirAll(thumbnailsPath, 0750); err != nil {
 return nil, fmt.Errorf("failed to create thumbnails directory: %w", err)
 }
 

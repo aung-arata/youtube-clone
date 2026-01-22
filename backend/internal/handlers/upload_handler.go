@@ -26,11 +26,12 @@ func NewUploadHandler(db *sql.DB, fileStorage *storage.FileStorage) *UploadHandl
 // UploadVideo handles video upload with multipart form data
 func (h *UploadHandler) UploadVideo(w http.ResponseWriter, r *http.Request) {
 	// Get user ID from context (set by AuthMiddleware)
-	userID, ok := r.Context().Value(middleware.UserIDKey).(int)
+	_, ok := r.Context().Value(middleware.UserIDKey).(int)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
+	// Note: userID can be used in future for tracking uploads per user
 
 	// Parse multipart form (max 500MB + 5MB for thumbnail)
 	if err := r.ParseMultipartForm(510 * 1024 * 1024); err != nil {
@@ -114,8 +115,11 @@ func (h *UploadHandler) UploadVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Log the upload (you could also store upload info in a separate table)
-	_ = userID // Use userID for logging or metadata
+	// Create video record
+	// Note: In a complete implementation, you would:
+	// - Store the userID as the uploader in a videos.user_id column
+	// - Add audit logging with userID, timestamp, and file paths
+	// - Track upload statistics per user
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

@@ -18,12 +18,17 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-// getJWTSecret retrieves the JWT secret from environment or uses a default
+// getJWTSecret retrieves the JWT secret from environment or uses a default for development
 func getJWTSecret() string {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		// Default secret for development only - should be set in production
+		// Default secret for development only
+		// In production, JWT_SECRET environment variable MUST be set
 		secret = "youtube-clone-secret-key-change-in-production"
+		// Log a warning in production environments
+		if os.Getenv("GO_ENV") == "production" {
+			panic("JWT_SECRET environment variable must be set in production")
+		}
 	}
 	return secret
 }
