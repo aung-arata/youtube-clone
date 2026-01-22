@@ -175,6 +175,21 @@ func runMigrations(db *sql.DB) error {
 	CREATE INDEX IF NOT EXISTS idx_playlists_user_id ON playlists (user_id);
 	CREATE INDEX IF NOT EXISTS idx_playlist_videos_playlist_id ON playlist_videos (playlist_id);
 	CREATE INDEX IF NOT EXISTS idx_playlist_videos_position ON playlist_videos (position);
+
+	CREATE TABLE IF NOT EXISTS notifications (
+		id SERIAL PRIMARY KEY,
+		user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+		type VARCHAR(50) NOT NULL,
+		title VARCHAR(255) NOT NULL,
+		message TEXT NOT NULL,
+		link VARCHAR(500),
+		is_read BOOLEAN DEFAULT FALSE,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);
+	CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications (created_at DESC);
+	CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications (is_read);
 	`
 
 	_, err := db.Exec(query)

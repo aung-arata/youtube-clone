@@ -8,10 +8,11 @@ A full-stack web-based YouTube clone built with **Hybrid Microservices Architect
 
 This project follows a **hybrid microservices architecture** pattern with:
 - **API Gateway** (Go) - Single entry point for all client requests
-- **Video Service** (Go) - Handles video management, views, likes/dislikes
+- **Video Service** (Go) - Handles video management, views, likes/dislikes, analytics
 - **User Service** (Go) - Manages user profiles and authentication
 - **Comment Service** (Go) - Handles comment CRUD operations
 - **History Service** (Go) - Tracks user watch history
+- **Notification Service** (Go) - Manages user notifications
 - **Admin Service** (PHP) - Admin dashboard, CMS, email templates, batch reports
 - **Separate databases** - Each service has its own PostgreSQL database for data isolation
 
@@ -24,27 +25,27 @@ This project follows a **hybrid microservices architecture** pattern with:
 └──────┬──────┘
        │
        ▼
-┌────────────────────────────────────────────────────────────┐
-│               API Gateway (Port 8080) [Go]                 │
-│  - Request Routing                                         │
-│  - CORS Handling                                           │
-│  - Rate Limiting                                           │
-│  - Request Logging                                         │
-└──────┬──────────────┬──────────┬────────────┬──────────────┘
-       │              │          │            │
-       ▼              ▼          ▼            ▼
-┌──────────┐   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
-│  Video   │   │   User   │  │ Comment  │  │ History  │  │  Admin   │
-│ Service  │   │ Service  │  │ Service  │  │ Service  │  │ Service  │
-│ (8081)   │   │ (8082)   │  │ (8083)   │  │ (8084)   │  │ (8085)   │
-│  [Go]    │   │  [Go]    │  │  [Go]    │  │  [Go]    │  │  [PHP]   │
-└────┬─────┘   └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘
-     │              │              │              │              │
-     ▼              ▼              ▼              ▼              ▼
-┌──────────┐   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
-│ Video DB │   │ User DB  │  │Comment DB│  │History DB│  │ Admin DB │
-│(Postgres)│   │(Postgres)│  │(Postgres)│  │(Postgres)│  │(Postgres)│
-└──────────┘   └──────────┘  └──────────┘  └──────────┘  └──────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                    API Gateway (Port 8080) [Go]                        │
+│  - Request Routing                                                     │
+│  - CORS Handling                                                       │
+│  - Rate Limiting                                                       │
+│  - Request Logging                                                     │
+└──────┬──────────┬──────────┬────────────┬──────────────┬──────────────┘
+       │          │          │            │              │
+       ▼          ▼          ▼            ▼              ▼
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+│  Video   │ │   User   │ │ Comment  │ │ History  │ │Notification│Admin   │
+│ Service  │ │ Service  │ │ Service  │ │ Service  │ │ Service  │ │Service │
+│ (8081)   │ │ (8082)   │ │ (8083)   │ │ (8084)   │ │ (8086)   │ │ (8085) │
+│  [Go]    │ │  [Go]    │ │  [Go]    │ │  [Go]    │ │  [Go]    │ │ [PHP]  │
+└────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬───┘
+     │            │            │            │            │            │
+     ▼            ▼            ▼            ▼            ▼            ▼
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+│ Video DB │ │ User DB  │ │Comment DB│ │History DB│ │Notify DB │ │ Admin DB │
+│(Postgres)│ │(Postgres)│ │(Postgres)│ │(Postgres)│ │(Postgres)│ │(Postgres)│
+└──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘
 ```
 
 ### Benefits of Hybrid Microservices Architecture
@@ -81,6 +82,10 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 - 📋 Playlist management (create, edit, delete, add/remove videos)
 - 🎯 Video recommendations based on category and views
 - 💎 Subscription plans (Free, Basic, Premium, Enterprise)
+- 🔥 Trending videos (most viewed in last 7 days)
+- 📈 Popular videos (most viewed of all time)
+- 📊 Video analytics (engagement metrics, like ratio)
+- 🔔 Notification system for user updates
 
 ### Backend Features (Microservices)
 - 🏗️ **Microservices Architecture** with independent services
@@ -99,6 +104,10 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 - 📋 Playlist API (CRUD operations, add/remove videos)
 - 🎯 Video recommendations API (category-based algorithm)
 - 💎 Subscription plans API (Free, Basic, Premium, Enterprise)
+- 🔥 Trending videos API (most viewed recently)
+- 📈 Popular videos API (most viewed all-time)
+- 📊 Video analytics API (engagement metrics)
+- 🔔 Notification API (create, read, mark as read)
 - 🗄️ **Database per Service** pattern for data isolation
 - 🔄 **Connection Pooling** optimization for all services
 - 🧪 Comprehensive unit tests
@@ -157,6 +166,9 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
    - View count tracking
    - Like/dislike management
    - Category management
+   - Trending videos (most viewed in last 7 days)
+   - Popular videos (most viewed all-time)
+   - Video analytics (engagement metrics)
    
 3. **User Service** (Port 8082) [Go]
    - User profile management
@@ -170,7 +182,14 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
    - Watch history tracking
    - History retrieval with pagination
    
-6. **Admin Service** (Port 8085) [PHP]
+6. **Notification Service** (Port 8086) [Go]
+   - User notification management
+   - Create and send notifications
+   - Mark notifications as read
+   - Unread notification count
+   - Notification history with filtering
+   
+7. **Admin Service** (Port 8085) [PHP]
    - Admin dashboard and user management
    - Content moderation queue
    - Blog post management (CMS)
@@ -290,6 +309,7 @@ youtube-clone/
    - Comment Service: http://localhost:8083
    - History Service: http://localhost:8084
    - Admin Service: http://localhost:8085
+   - Notification Service: http://localhost:8086
 
 ### Installation for Local Development
 
@@ -303,11 +323,13 @@ If you want to run services individually for development:
 
 2. **Start PostgreSQL databases**
    ```bash
-   # You'll need to create 4 databases:
+   # You'll need to create 6 databases:
    CREATE DATABASE video_service_db;
    CREATE DATABASE user_service_db;
    CREATE DATABASE comment_service_db;
    CREATE DATABASE history_service_db;
+   CREATE DATABASE admin_service_db;
+   CREATE DATABASE notification_service_db;
    ```
 
 3. **Run each microservice**
@@ -865,6 +887,8 @@ This project is licensed under the ISC License.
 - [x] Playlist management (create, update, delete, add/remove videos)
 - [x] Video recommendations algorithm (category-based)
 - [x] Database connection pooling optimization
+- [x] Video analytics and statistics (trending, popular, engagement metrics)
+- [x] Notification system for user updates
 
 ### Planned 🚀
 - [ ] User authentication and authorization (JWT-based)
@@ -874,5 +898,8 @@ This project is licensed under the ISC License.
 - [ ] HTTPS support and security headers
 - [ ] Comprehensive API documentation (Swagger/OpenAPI)
 - [ ] Database migration versioning system
+- [ ] Real-time notifications with WebSockets
+- [ ] Advanced search filters (duration, upload date, sort options)
+- [ ] Video transcoding and multiple quality options
 
 
