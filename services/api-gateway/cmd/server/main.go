@@ -27,10 +27,15 @@ func main() {
 
 	// Video routes - proxy to video-service
 	api.PathPrefix("/videos").HandlerFunc(proxyToService(videoServiceURL, "/videos"))
+	api.PathPrefix("/playlists").HandlerFunc(proxyToService(videoServiceURL, "/playlists"))
 
 	// User routes - proxy to user-service
 	api.PathPrefix("/users/{id}/history").HandlerFunc(proxyToService(historyServiceURL, "/users"))
+	api.PathPrefix("/users/{id}/subscriptions").HandlerFunc(proxyToService(userServiceURL, "/users"))
+	api.PathPrefix("/users/{id}/playlists").HandlerFunc(proxyToService(videoServiceURL, "/users"))
+	api.PathPrefix("/users/{id}/plan").HandlerFunc(proxyToService(userServiceURL, "/users"))
 	api.PathPrefix("/users").HandlerFunc(proxyToService(userServiceURL, "/users"))
+	api.PathPrefix("/plans").HandlerFunc(proxyToService(userServiceURL, "/plans"))
 
 	// Comment routes - proxy to comment-service
 	api.PathPrefix("/comments").HandlerFunc(proxyToService(commentServiceURL, "/comments"))

@@ -27,10 +27,21 @@ func main() {
 	r.HandleFunc("/videos", videoHandler.GetVideos).Methods("GET")
 	r.HandleFunc("/videos/categories", videoHandler.GetCategories).Methods("GET")
 	r.HandleFunc("/videos/{id}", videoHandler.GetVideo).Methods("GET")
+	r.HandleFunc("/videos/{id}/recommendations", videoHandler.GetRecommendations).Methods("GET")
 	r.HandleFunc("/videos", videoHandler.CreateVideo).Methods("POST")
 	r.HandleFunc("/videos/{id}/views", videoHandler.IncrementViews).Methods("POST")
 	r.HandleFunc("/videos/{id}/like", videoHandler.LikeVideo).Methods("POST")
 	r.HandleFunc("/videos/{id}/dislike", videoHandler.DislikeVideo).Methods("POST")
+
+	// Playlist routes
+	playlistHandler := handlers.NewPlaylistHandler(db)
+	r.HandleFunc("/users/{userId}/playlists", playlistHandler.GetUserPlaylists).Methods("GET")
+	r.HandleFunc("/users/{userId}/playlists", playlistHandler.CreatePlaylist).Methods("POST")
+	r.HandleFunc("/playlists/{id}", playlistHandler.GetPlaylist).Methods("GET")
+	r.HandleFunc("/playlists/{id}", playlistHandler.UpdatePlaylist).Methods("PUT")
+	r.HandleFunc("/playlists/{id}", playlistHandler.DeletePlaylist).Methods("DELETE")
+	r.HandleFunc("/playlists/{id}/videos", playlistHandler.AddVideoToPlaylist).Methods("POST")
+	r.HandleFunc("/playlists/{id}/videos/{videoId}", playlistHandler.RemoveVideoFromPlaylist).Methods("DELETE")
 	
 	// Health check
 	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

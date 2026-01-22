@@ -31,6 +31,7 @@ func main() {
 	api.HandleFunc("/videos", videoHandler.GetVideos).Methods("GET")
 	api.HandleFunc("/videos/categories", videoHandler.GetCategories).Methods("GET")
 	api.HandleFunc("/videos/{id}", videoHandler.GetVideo).Methods("GET")
+	api.HandleFunc("/videos/{id}/recommendations", videoHandler.GetRecommendations).Methods("GET")
 	api.HandleFunc("/videos", videoHandler.CreateVideo).Methods("POST")
 	api.HandleFunc("/videos/{id}/views", videoHandler.IncrementViews).Methods("POST")
 	api.HandleFunc("/videos/{id}/like", videoHandler.LikeVideo).Methods("POST")
@@ -64,6 +65,23 @@ func main() {
 	api.HandleFunc("/plans/{id}", planHandler.DeletePlan).Methods("DELETE")
 	api.HandleFunc("/users/{userId}/plan", planHandler.GetUserPlan).Methods("GET")
 	api.HandleFunc("/users/{userId}/plan", planHandler.UpdateUserPlan).Methods("PUT")
+
+	// Subscription routes
+	subscriptionHandler := handlers.NewSubscriptionHandler(db)
+	api.HandleFunc("/users/{userId}/subscriptions", subscriptionHandler.GetUserSubscriptions).Methods("GET")
+	api.HandleFunc("/users/{userId}/subscriptions", subscriptionHandler.Subscribe).Methods("POST")
+	api.HandleFunc("/users/{userId}/subscriptions/{channelName}", subscriptionHandler.CheckSubscription).Methods("GET")
+	api.HandleFunc("/users/{userId}/subscriptions/{channelName}", subscriptionHandler.Unsubscribe).Methods("DELETE")
+
+	// Playlist routes
+	playlistHandler := handlers.NewPlaylistHandler(db)
+	api.HandleFunc("/users/{userId}/playlists", playlistHandler.GetUserPlaylists).Methods("GET")
+	api.HandleFunc("/users/{userId}/playlists", playlistHandler.CreatePlaylist).Methods("POST")
+	api.HandleFunc("/playlists/{id}", playlistHandler.GetPlaylist).Methods("GET")
+	api.HandleFunc("/playlists/{id}", playlistHandler.UpdatePlaylist).Methods("PUT")
+	api.HandleFunc("/playlists/{id}", playlistHandler.DeletePlaylist).Methods("DELETE")
+	api.HandleFunc("/playlists/{id}/videos", playlistHandler.AddVideoToPlaylist).Methods("POST")
+	api.HandleFunc("/playlists/{id}/videos/{videoId}", playlistHandler.RemoveVideoFromPlaylist).Methods("DELETE")
 	
 	// Health check
 	api.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

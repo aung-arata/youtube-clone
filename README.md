@@ -77,6 +77,10 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 - 🏷️ Video categories and filtering
 - 👤 User profiles with edit functionality
 - 📜 Watch history tracking
+- 🔔 Channel subscription system
+- 📋 Playlist management (create, edit, delete, add/remove videos)
+- 🎯 Video recommendations based on category and views
+- 💎 Subscription plans (Free, Basic, Premium, Enterprise)
 
 ### Backend Features (Microservices)
 - 🏗️ **Microservices Architecture** with independent services
@@ -91,7 +95,12 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 - 👤 User profile API (Create, Read, Update)
 - 📜 Watch history API with pagination
 - 🏷️ Category filtering and management
+- 🔔 Subscription API for channels (subscribe, unsubscribe, check status)
+- 📋 Playlist API (CRUD operations, add/remove videos)
+- 🎯 Video recommendations API (category-based algorithm)
+- 💎 Subscription plans API (Free, Basic, Premium, Enterprise)
 - 🗄️ **Database per Service** pattern for data isolation
+- 🔄 **Connection Pooling** optimization for all services
 - 🧪 Comprehensive unit tests
 - 🐳 Docker support with multi-stage builds
 
@@ -852,18 +861,18 @@ This project is licensed under the ISC License.
 - [x] Video categories and filtering
 - [x] User profile pages
 - [x] Video watch history tracking
+- [x] Subscription system for channels
+- [x] Playlist management (create, update, delete, add/remove videos)
+- [x] Video recommendations algorithm (category-based)
+- [x] Database connection pooling optimization
 
 ### Planned 🚀
 - [ ] User authentication and authorization (JWT-based)
 - [ ] Video upload functionality with file handling
-- [ ] Subscription system for channels
-- [ ] Playlist management
-- [ ] Video recommendations algorithm
 - [ ] Frontend component tests
 - [ ] API integration tests
 - [ ] HTTPS support and security headers
 - [ ] Comprehensive API documentation (Swagger/OpenAPI)
-- [ ] Database connection pooling optimization
 - [ ] Database migration versioning system
 
 

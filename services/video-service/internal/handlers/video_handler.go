@@ -301,3 +301,77 @@ func (h *VideoHandler) GetCategories(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(categories)
 }
+
+// GetRecommendations returns recommended videos based on a given video
+// Algorithm: Returns videos from the same category, sorted by views, excluding the current video
+func (h *VideoHandler) GetRecommendations(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid video ID", http.StatusBadRequest)
+		return
+	}
+
+	// Get limit from query parameter
+	limitStr := r.URL.Query().Get("limit")
+	limit := 10 // Default limit
+	if limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 50 {
+			limit = l
+		}
+	}
+
+	// First, get the category of the current video
+	var category string
+	err = h.db.QueryRow("SELECT category FROM videos WHERE id = $1", id).Scan(&category)
+	if err == sql.ErrNoRows {
+		http.Error(w, "Video not found", http.StatusNotFound)
+		return
+	} else if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Get recommended videos from the same category, sorted by views
+	query := `
+		SELECT id, title, description, url, thumbnail, channel_name, channel_avatar,
+		       views, likes, dislikes, category, duration, uploaded_at, created_at, updated_at
+		FROM videos
+		WHERE category = $1 AND id != $2
+		ORDER BY views DESC, uploaded_at DESC
+		LIMIT $3
+	`
+
+	rows, err := h.db.Query(query, category, id, limit)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var videos []models.Video
+	for rows.Next() {
+		var v models.Video
+		err := rows.Scan(&v.ID, &v.Title, &v.Description, &v.URL, &v.Thumbnail,
+			&v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes,
+			&v.Category, &v.Duration, &v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		videos = append(videos, v)
+	}
+
+	if err = rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if videos == nil {
+		videos = []models.Video{}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(videos)
+}
+
