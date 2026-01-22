@@ -13,10 +13,11 @@ import (
 )
 
 var (
-	videoServiceURL   = getEnv("VIDEO_SERVICE_URL", "http://video-service:8081")
-	userServiceURL    = getEnv("USER_SERVICE_URL", "http://user-service:8082")
-	commentServiceURL = getEnv("COMMENT_SERVICE_URL", "http://comment-service:8083")
-	historyServiceURL = getEnv("HISTORY_SERVICE_URL", "http://history-service:8084")
+	videoServiceURL        = getEnv("VIDEO_SERVICE_URL", "http://video-service:8081")
+	userServiceURL         = getEnv("USER_SERVICE_URL", "http://user-service:8082")
+	commentServiceURL      = getEnv("COMMENT_SERVICE_URL", "http://comment-service:8083")
+	historyServiceURL      = getEnv("HISTORY_SERVICE_URL", "http://history-service:8084")
+	notificationServiceURL = getEnv("NOTIFICATION_SERVICE_URL", "http://notification-service:8086")
 )
 
 func main() {
@@ -40,6 +41,10 @@ func main() {
 	// Comment routes - proxy to comment-service
 	api.PathPrefix("/comments").HandlerFunc(proxyToService(commentServiceURL, "/comments"))
 	api.PathPrefix("/videos/{videoId}/comments").HandlerFunc(proxyToService(commentServiceURL, "/videos"))
+
+	// Notification routes - proxy to notification-service
+	api.PathPrefix("/users/{userId}/notifications").HandlerFunc(proxyToService(notificationServiceURL, "/users"))
+	api.PathPrefix("/notifications").HandlerFunc(proxyToService(notificationServiceURL, "/notifications"))
 
 	// Health check
 	api.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

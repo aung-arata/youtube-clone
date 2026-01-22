@@ -8,10 +8,11 @@ A full-stack web-based YouTube clone built with **Hybrid Microservices Architect
 
 This project follows a **hybrid microservices architecture** pattern with:
 - **API Gateway** (Go) - Single entry point for all client requests
-- **Video Service** (Go) - Handles video management, views, likes/dislikes
+- **Video Service** (Go) - Handles video management, views, likes/dislikes, analytics
 - **User Service** (Go) - Manages user profiles and authentication
 - **Comment Service** (Go) - Handles comment CRUD operations
 - **History Service** (Go) - Tracks user watch history
+- **Notification Service** (Go) - Manages user notifications
 - **Admin Service** (PHP) - Admin dashboard, CMS, email templates, batch reports
 - **Separate databases** - Each service has its own PostgreSQL database for data isolation
 
@@ -24,27 +25,27 @@ This project follows a **hybrid microservices architecture** pattern with:
 └──────┬──────┘
        │
        ▼
-┌────────────────────────────────────────────────────────────┐
-│               API Gateway (Port 8080) [Go]                 │
-│  - Request Routing                                         │
-│  - CORS Handling                                           │
-│  - Rate Limiting                                           │
-│  - Request Logging                                         │
-└──────┬──────────────┬──────────┬────────────┬──────────────┘
-       │              │          │            │
-       ▼              ▼          ▼            ▼
-┌──────────┐   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
-│  Video   │   │   User   │  │ Comment  │  │ History  │  │  Admin   │
-│ Service  │   │ Service  │  │ Service  │  │ Service  │  │ Service  │
-│ (8081)   │   │ (8082)   │  │ (8083)   │  │ (8084)   │  │ (8085)   │
-│  [Go]    │   │  [Go]    │  │  [Go]    │  │  [Go]    │  │  [PHP]   │
-└────┬─────┘   └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘
-     │              │              │              │              │
-     ▼              ▼              ▼              ▼              ▼
-┌──────────┐   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
-│ Video DB │   │ User DB  │  │Comment DB│  │History DB│  │ Admin DB │
-│(Postgres)│   │(Postgres)│  │(Postgres)│  │(Postgres)│  │(Postgres)│
-└──────────┘   └──────────┘  └──────────┘  └──────────┘  └──────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                    API Gateway (Port 8080) [Go]                        │
+│  - Request Routing                                                     │
+│  - CORS Handling                                                       │
+│  - Rate Limiting                                                       │
+│  - Request Logging                                                     │
+└──────┬──────────┬──────────┬────────────┬──────────────┬──────────────┘
+       │          │          │            │              │
+       ▼          ▼          ▼            ▼              ▼
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+│  Video   │ │   User   │ │ Comment  │ │ History  │ │Notification│Admin   │
+│ Service  │ │ Service  │ │ Service  │ │ Service  │ │ Service  │ │Service │
+│ (8081)   │ │ (8082)   │ │ (8083)   │ │ (8084)   │ │ (8086)   │ │ (8085) │
+│  [Go]    │ │  [Go]    │ │  [Go]    │ │  [Go]    │ │  [Go]    │ │ [PHP]  │
+└────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬───┘
+     │            │            │            │            │            │
+     ▼            ▼            ▼            ▼            ▼            ▼
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+│ Video DB │ │ User DB  │ │Comment DB│ │History DB│ │Notify DB │ │ Admin DB │
+│(Postgres)│ │(Postgres)│ │(Postgres)│ │(Postgres)│ │(Postgres)│ │(Postgres)│
+└──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘
 ```
 
 ### Benefits of Hybrid Microservices Architecture
@@ -68,6 +69,7 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 - 📱 Responsive design for all devices
 - 🎥 Video listing and playback
 - 🔍 Full-text search functionality
+- 🔎 Enhanced search with filters (duration, upload date, sorting)
 - 📊 Video management API with CRUD operations
 - 👀 View count tracking
 - 📄 Pagination support for efficient data loading
@@ -81,6 +83,10 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 - 📋 Playlist management (create, edit, delete, add/remove videos)
 - 🎯 Video recommendations based on category and views
 - 💎 Subscription plans (Free, Basic, Premium, Enterprise)
+- 🔥 Trending videos (most viewed in last 7 days)
+- 📈 Popular videos (most viewed of all time)
+- 📊 Video analytics (engagement metrics, like ratio)
+- 🔔 Notification system for user updates
 
 ### Backend Features (Microservices)
 - 🏗️ **Microservices Architecture** with independent services
@@ -99,6 +105,10 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 - 📋 Playlist API (CRUD operations, add/remove videos)
 - 🎯 Video recommendations API (category-based algorithm)
 - 💎 Subscription plans API (Free, Basic, Premium, Enterprise)
+- 🔥 Trending videos API (most viewed recently)
+- 📈 Popular videos API (most viewed all-time)
+- 📊 Video analytics API (engagement metrics)
+- 🔔 Notification API (create, read, mark as read)
 - 🗄️ **Database per Service** pattern for data isolation
 - 🔄 **Connection Pooling** optimization for all services
 - 🧪 Comprehensive unit tests
@@ -157,6 +167,9 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
    - View count tracking
    - Like/dislike management
    - Category management
+   - Trending videos (most viewed in last 7 days)
+   - Popular videos (most viewed all-time)
+   - Video analytics (engagement metrics)
    
 3. **User Service** (Port 8082) [Go]
    - User profile management
@@ -170,7 +183,14 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
    - Watch history tracking
    - History retrieval with pagination
    
-6. **Admin Service** (Port 8085) [PHP]
+6. **Notification Service** (Port 8086) [Go]
+   - User notification management
+   - Create and send notifications
+   - Mark notifications as read
+   - Unread notification count
+   - Notification history with filtering
+   
+7. **Admin Service** (Port 8085) [PHP]
    - Admin dashboard and user management
    - Content moderation queue
    - Blog post management (CMS)
@@ -290,6 +310,7 @@ youtube-clone/
    - Comment Service: http://localhost:8083
    - History Service: http://localhost:8084
    - Admin Service: http://localhost:8085
+   - Notification Service: http://localhost:8086
 
 ### Installation for Local Development
 
@@ -303,11 +324,13 @@ If you want to run services individually for development:
 
 2. **Start PostgreSQL databases**
    ```bash
-   # You'll need to create 4 databases:
+   # You'll need to create 6 databases:
    CREATE DATABASE video_service_db;
    CREATE DATABASE user_service_db;
    CREATE DATABASE comment_service_db;
    CREATE DATABASE history_service_db;
+   CREATE DATABASE admin_service_db;
+   CREATE DATABASE notification_service_db;
    ```
 
 3. **Run each microservice**
@@ -419,12 +442,32 @@ The gateway routes requests to the appropriate microservice:
     - `category` (optional): Filter by category
     - `page` (optional): Page number (default: 1)
     - `limit` (optional): Items per page (default: 20, max: 100)
+    - `sort_by` (optional): Sort field - views, likes, date, title (default: date)
+    - `order` (optional): Sort order - asc, desc (default: desc)
+    - `uploaded_after` (optional): Filter videos uploaded after this date (ISO 8601 format)
+    - `min_duration` (optional): Minimum video duration in seconds
+    - `max_duration` (optional): Maximum video duration in seconds
 - `GET /api/videos/categories` - Get all unique video categories
+- `GET /api/videos/trending` - Get trending videos (most viewed in last 7 days)
+- `GET /api/videos/popular` - Get most popular videos (all-time)
 - `GET /api/videos/{id}` - Get a specific video
+- `GET /api/videos/{id}/analytics` - Get detailed analytics for a video
+- `GET /api/videos/{id}/recommendations` - Get recommended videos
 - `POST /api/videos` - Create a new video
 - `POST /api/videos/{id}/views` - Increment view count
 - `POST /api/videos/{id}/like` - Increment like count
 - `POST /api/videos/{id}/dislike` - Increment dislike count
+
+### Notifications (Notification Service)
+
+- `GET /api/users/{userId}/notifications` - Get user's notifications
+  - Query Parameters:
+    - `unread` (optional): Set to "true" to get only unread notifications
+    - `limit` (optional): Items to return (default: 50, max: 100)
+- `GET /api/users/{userId}/notifications/unread-count` - Get count of unread notifications
+- `POST /api/notifications` - Create a new notification
+- `POST /api/notifications/{id}/mark-read` - Mark a notification as read
+- `POST /api/users/{userId}/notifications/mark-all-read` - Mark all notifications as read
 
 ### Comments (Comment Service)
 
@@ -462,6 +505,30 @@ curl http://localhost:8080/api/videos
 **Search videos:**
 ```bash
 curl "http://localhost:8080/api/videos?q=react&page=1&limit=10"
+```
+
+**Search with advanced filters:**
+```bash
+# Get videos sorted by views, longer than 5 minutes
+curl "http://localhost:8080/api/videos?sort_by=views&order=desc&min_duration=300"
+
+# Get videos from last week, sorted by likes
+curl "http://localhost:8080/api/videos?uploaded_after=2024-01-15T00:00:00Z&sort_by=likes"
+```
+
+**Get trending videos:**
+```bash
+curl http://localhost:8080/api/videos/trending
+```
+
+**Get popular videos:**
+```bash
+curl http://localhost:8080/api/videos/popular
+```
+
+**Get video analytics:**
+```bash
+curl http://localhost:8080/api/videos/1/analytics
 ```
 
 **Get a specific video:**
@@ -566,6 +633,44 @@ curl -X POST http://localhost:8080/api/users/1/history \
 **Get watch history:**
 ```bash
 curl http://localhost:8080/api/users/1/history
+```
+
+**Get user notifications:**
+```bash
+curl http://localhost:8080/api/users/1/notifications
+```
+
+**Get unread notifications only:**
+```bash
+curl "http://localhost:8080/api/users/1/notifications?unread=true"
+```
+
+**Get unread notification count:**
+```bash
+curl http://localhost:8080/api/users/1/notifications/unread-count
+```
+
+**Create a notification:**
+```bash
+curl -X POST http://localhost:8080/api/notifications \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": 1,
+    "type": "subscription",
+    "title": "New Video from Channel",
+    "message": "Your favorite channel just uploaded a new video!",
+    "link": "/videos/123"
+  }'
+```
+
+**Mark notification as read:**
+```bash
+curl -X POST http://localhost:8080/api/notifications/1/mark-read
+```
+
+**Mark all notifications as read:**
+```bash
+curl -X POST http://localhost:8080/api/users/1/notifications/mark-all-read
 ```
 
 For more detailed API documentation, see [API.md](API.md).
@@ -865,6 +970,9 @@ This project is licensed under the ISC License.
 - [x] Playlist management (create, update, delete, add/remove videos)
 - [x] Video recommendations algorithm (category-based)
 - [x] Database connection pooling optimization
+- [x] Video analytics and statistics (trending, popular, engagement metrics)
+- [x] Notification system for user updates
+- [x] Advanced search filters (duration, upload date, sort options)
 
 ### Planned 🚀
 - [ ] User authentication and authorization (JWT-based)
@@ -874,5 +982,7 @@ This project is licensed under the ISC License.
 - [ ] HTTPS support and security headers
 - [ ] Comprehensive API documentation (Swagger/OpenAPI)
 - [ ] Database migration versioning system
+- [ ] Real-time notifications with WebSockets
+- [ ] Video transcoding and multiple quality options
 
 

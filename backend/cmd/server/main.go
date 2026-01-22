@@ -30,8 +30,11 @@ func main() {
 	videoHandler := handlers.NewVideoHandler(db)
 	api.HandleFunc("/videos", videoHandler.GetVideos).Methods("GET")
 	api.HandleFunc("/videos/categories", videoHandler.GetCategories).Methods("GET")
+	api.HandleFunc("/videos/trending", videoHandler.GetTrendingVideos).Methods("GET")
+	api.HandleFunc("/videos/popular", videoHandler.GetPopularVideos).Methods("GET")
 	api.HandleFunc("/videos/{id}", videoHandler.GetVideo).Methods("GET")
 	api.HandleFunc("/videos/{id}/recommendations", videoHandler.GetRecommendations).Methods("GET")
+	api.HandleFunc("/videos/{id}/analytics", videoHandler.GetVideoAnalytics).Methods("GET")
 	api.HandleFunc("/videos", videoHandler.CreateVideo).Methods("POST")
 	api.HandleFunc("/videos/{id}/views", videoHandler.IncrementViews).Methods("POST")
 	api.HandleFunc("/videos/{id}/like", videoHandler.LikeVideo).Methods("POST")
@@ -82,6 +85,14 @@ func main() {
 	api.HandleFunc("/playlists/{id}", playlistHandler.DeletePlaylist).Methods("DELETE")
 	api.HandleFunc("/playlists/{id}/videos", playlistHandler.AddVideoToPlaylist).Methods("POST")
 	api.HandleFunc("/playlists/{id}/videos/{videoId}", playlistHandler.RemoveVideoFromPlaylist).Methods("DELETE")
+	
+	// Notification routes
+	notificationHandler := handlers.NewNotificationHandler(db)
+	api.HandleFunc("/users/{userId}/notifications", notificationHandler.GetUserNotifications).Methods("GET")
+	api.HandleFunc("/users/{userId}/notifications/unread-count", notificationHandler.GetUnreadCount).Methods("GET")
+	api.HandleFunc("/users/{userId}/notifications/mark-all-read", notificationHandler.MarkAllAsRead).Methods("POST")
+	api.HandleFunc("/notifications", notificationHandler.CreateNotification).Methods("POST")
+	api.HandleFunc("/notifications/{id}/mark-read", notificationHandler.MarkAsRead).Methods("POST")
 	
 	// Health check
 	api.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
