@@ -26,6 +26,17 @@ func main() {
 	// API routes
 	api := r.PathPrefix("/api").Subrouter()
 	
+	// Auth routes (public)
+	authHandler := handlers.NewAuthHandler(db)
+	api.HandleFunc("/auth/signup", authHandler.Signup).Methods("POST")
+	api.HandleFunc("/auth/login", authHandler.Login).Methods("POST")
+	api.HandleFunc("/auth/refresh", authHandler.RefreshToken).Methods("POST")
+	
+	// Protected auth route
+	protectedAuth := api.PathPrefix("/auth").Subrouter()
+	protectedAuth.Use(middleware.AuthMiddleware)
+	protectedAuth.HandleFunc("/me", authHandler.GetCurrentUser).Methods("GET")
+	
 	// Video routes
 	videoHandler := handlers.NewVideoHandler(db)
 	api.HandleFunc("/videos", videoHandler.GetVideos).Methods("GET")
