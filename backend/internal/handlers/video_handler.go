@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/aung-arata/youtube-clone/backend/internal/models"
 	"github.com/gorilla/mux"
@@ -74,28 +75,47 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 		argIndex++
 	}
 
-	// Add uploaded_after filter
+	// Add uploaded_after filter with date validation
 	if uploadedAfter != "" {
+		// Validate date format (ISO 8601)
+		if _, err := time.Parse(time.RFC3339, uploadedAfter); err != nil {
+			http.Error(w, "Invalid date format for uploaded_after. Use ISO 8601 format (e.g., 2024-01-15T00:00:00Z)", http.StatusBadRequest)
+			return
+		}
 		conditions = append(conditions, fmt.Sprintf("uploaded_at >= $%d", argIndex))
 		args = append(args, uploadedAfter)
 		argIndex++
 	}
 
-	// Add duration filters (convert duration string "MM:SS" to seconds for comparison)
+	// Add duration filters with error handling
 	if minDuration != "" {
-		if minDur, err := strconv.Atoi(minDuration); err == nil {
-			conditions = append(conditions, fmt.Sprintf("EXTRACT(EPOCH FROM (duration::interval)) >= $%d", argIndex))
-			args = append(args, minDur)
-			argIndex++
+		minDur, err := strconv.Atoi(minDuration)
+		if err != nil {
+			http.Error(w, "Invalid min_duration value. Must be an integer representing seconds", http.StatusBadRequest)
+			return
 		}
+		if minDur < 0 {
+			http.Error(w, "min_duration must be a positive number", http.StatusBadRequest)
+			return
+		}
+		conditions = append(conditions, fmt.Sprintf("EXTRACT(EPOCH FROM (duration::interval)) >= $%d", argIndex))
+		args = append(args, minDur)
+		argIndex++
 	}
 
 	if maxDuration != "" {
-		if maxDur, err := strconv.Atoi(maxDuration); err == nil {
-			conditions = append(conditions, fmt.Sprintf("EXTRACT(EPOCH FROM (duration::interval)) <= $%d", argIndex))
-			args = append(args, maxDur)
-			argIndex++
+		maxDur, err := strconv.Atoi(maxDuration)
+		if err != nil {
+			http.Error(w, "Invalid max_duration value. Must be an integer representing seconds", http.StatusBadRequest)
+			return
 		}
+		if maxDur < 0 {
+			http.Error(w, "max_duration must be a positive number", http.StatusBadRequest)
+			return
+		}
+		conditions = append(conditions, fmt.Sprintf("EXTRACT(EPOCH FROM (duration::interval)) <= $%d", argIndex))
+		args = append(args, maxDur)
+		argIndex++
 	}
 
 	if len(conditions) > 0 {
