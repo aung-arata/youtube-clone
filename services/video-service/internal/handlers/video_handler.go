@@ -27,6 +27,11 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 	category := r.URL.Query().Get("category")
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")
+	sortBy := r.URL.Query().Get("sort_by")      // views, likes, date, title
+	orderBy := r.URL.Query().Get("order")        // asc, desc
+	uploadedAfter := r.URL.Query().Get("uploaded_after")  // date filter
+	minDuration := r.URL.Query().Get("min_duration")      // minimum duration in seconds
+	maxDuration := r.URL.Query().Get("max_duration")      // maximum duration in seconds
 
 	// Default pagination values
 	page := 1
@@ -69,11 +74,57 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 		argIndex++
 	}
 
+	// Add uploaded_after filter
+	if uploadedAfter != "" {
+		conditions = append(conditions, fmt.Sprintf("uploaded_at >= $%d", argIndex))
+		args = append(args, uploadedAfter)
+		argIndex++
+	}
+
+	// Add duration filters (convert duration string "MM:SS" to seconds for comparison)
+	if minDuration != "" {
+		if minDur, err := strconv.Atoi(minDuration); err == nil {
+			conditions = append(conditions, fmt.Sprintf("EXTRACT(EPOCH FROM (duration::interval)) >= $%d", argIndex))
+			args = append(args, minDur)
+			argIndex++
+		}
+	}
+
+	if maxDuration != "" {
+		if maxDur, err := strconv.Atoi(maxDuration); err == nil {
+			conditions = append(conditions, fmt.Sprintf("EXTRACT(EPOCH FROM (duration::interval)) <= $%d", argIndex))
+			args = append(args, maxDur)
+			argIndex++
+		}
+	}
+
 	if len(conditions) > 0 {
 		query += " WHERE " + strings.Join(conditions, " AND ")
 	}
 
-	query += fmt.Sprintf(` ORDER BY uploaded_at DESC LIMIT $%d OFFSET $%d`, argIndex, argIndex+1)
+	// Add sorting
+	orderClause := "uploaded_at DESC" // default sorting
+	if sortBy != "" {
+		order := "DESC"
+		if orderBy == "asc" {
+			order = "ASC"
+		}
+		
+		switch sortBy {
+		case "views":
+			orderClause = "views " + order
+		case "likes":
+			orderClause = "likes " + order
+		case "date":
+			orderClause = "uploaded_at " + order
+		case "title":
+			orderClause = "title " + order
+		default:
+			orderClause = "uploaded_at DESC"
+		}
+	}
+
+	query += fmt.Sprintf(` ORDER BY %s LIMIT $%d OFFSET $%d`, orderClause, argIndex, argIndex+1)
 	args = append(args, limit, offset)
 
 	rows, err := h.db.Query(query, args...)

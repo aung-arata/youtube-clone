@@ -69,6 +69,7 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 - 📱 Responsive design for all devices
 - 🎥 Video listing and playback
 - 🔍 Full-text search functionality
+- 🔎 Enhanced search with filters (duration, upload date, sorting)
 - 📊 Video management API with CRUD operations
 - 👀 View count tracking
 - 📄 Pagination support for efficient data loading
@@ -441,12 +442,32 @@ The gateway routes requests to the appropriate microservice:
     - `category` (optional): Filter by category
     - `page` (optional): Page number (default: 1)
     - `limit` (optional): Items per page (default: 20, max: 100)
+    - `sort_by` (optional): Sort field - views, likes, date, title (default: date)
+    - `order` (optional): Sort order - asc, desc (default: desc)
+    - `uploaded_after` (optional): Filter videos uploaded after this date (ISO 8601 format)
+    - `min_duration` (optional): Minimum video duration in seconds
+    - `max_duration` (optional): Maximum video duration in seconds
 - `GET /api/videos/categories` - Get all unique video categories
+- `GET /api/videos/trending` - Get trending videos (most viewed in last 7 days)
+- `GET /api/videos/popular` - Get most popular videos (all-time)
 - `GET /api/videos/{id}` - Get a specific video
+- `GET /api/videos/{id}/analytics` - Get detailed analytics for a video
+- `GET /api/videos/{id}/recommendations` - Get recommended videos
 - `POST /api/videos` - Create a new video
 - `POST /api/videos/{id}/views` - Increment view count
 - `POST /api/videos/{id}/like` - Increment like count
 - `POST /api/videos/{id}/dislike` - Increment dislike count
+
+### Notifications (Notification Service)
+
+- `GET /api/users/{userId}/notifications` - Get user's notifications
+  - Query Parameters:
+    - `unread` (optional): Set to "true" to get only unread notifications
+    - `limit` (optional): Items to return (default: 50, max: 100)
+- `GET /api/users/{userId}/notifications/unread-count` - Get count of unread notifications
+- `POST /api/notifications` - Create a new notification
+- `POST /api/notifications/{id}/mark-read` - Mark a notification as read
+- `POST /api/users/{userId}/notifications/mark-all-read` - Mark all notifications as read
 
 ### Comments (Comment Service)
 
@@ -484,6 +505,30 @@ curl http://localhost:8080/api/videos
 **Search videos:**
 ```bash
 curl "http://localhost:8080/api/videos?q=react&page=1&limit=10"
+```
+
+**Search with advanced filters:**
+```bash
+# Get videos sorted by views, longer than 5 minutes
+curl "http://localhost:8080/api/videos?sort_by=views&order=desc&min_duration=300"
+
+# Get videos from last week, sorted by likes
+curl "http://localhost:8080/api/videos?uploaded_after=2024-01-15T00:00:00Z&sort_by=likes"
+```
+
+**Get trending videos:**
+```bash
+curl http://localhost:8080/api/videos/trending
+```
+
+**Get popular videos:**
+```bash
+curl http://localhost:8080/api/videos/popular
+```
+
+**Get video analytics:**
+```bash
+curl http://localhost:8080/api/videos/1/analytics
 ```
 
 **Get a specific video:**
@@ -588,6 +633,44 @@ curl -X POST http://localhost:8080/api/users/1/history \
 **Get watch history:**
 ```bash
 curl http://localhost:8080/api/users/1/history
+```
+
+**Get user notifications:**
+```bash
+curl http://localhost:8080/api/users/1/notifications
+```
+
+**Get unread notifications only:**
+```bash
+curl "http://localhost:8080/api/users/1/notifications?unread=true"
+```
+
+**Get unread notification count:**
+```bash
+curl http://localhost:8080/api/users/1/notifications/unread-count
+```
+
+**Create a notification:**
+```bash
+curl -X POST http://localhost:8080/api/notifications \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": 1,
+    "type": "subscription",
+    "title": "New Video from Channel",
+    "message": "Your favorite channel just uploaded a new video!",
+    "link": "/videos/123"
+  }'
+```
+
+**Mark notification as read:**
+```bash
+curl -X POST http://localhost:8080/api/notifications/1/mark-read
+```
+
+**Mark all notifications as read:**
+```bash
+curl -X POST http://localhost:8080/api/users/1/notifications/mark-all-read
 ```
 
 For more detailed API documentation, see [API.md](API.md).
