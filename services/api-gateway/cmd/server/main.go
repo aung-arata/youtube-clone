@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/aung-arata/youtube-clone/services/api-gateway/internal/docs"
 	"github.com/aung-arata/youtube-clone/services/api-gateway/internal/middleware"
 	"github.com/gorilla/mux"
 )
@@ -49,6 +50,10 @@ func main() {
 	api.PathPrefix("/users/{userId}/notifications").HandlerFunc(proxyToService(notificationServiceURL, "/users"))
 	api.PathPrefix("/notifications").HandlerFunc(proxyToService(notificationServiceURL, "/notifications"))
 
+	// API Documentation routes (Swagger/OpenAPI)
+	api.HandleFunc("/docs", docs.SwaggerUIHandler).Methods("GET")
+	api.HandleFunc("/docs/openapi.json", docs.OpenAPISpecHandler).Methods("GET")
+
 	// Health check
 	api.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -58,6 +63,9 @@ func main() {
 
 	// Enable CORS
 	r.Use(corsMiddleware)
+
+	// Add security headers middleware
+	r.Use(middleware.SecurityHeadersMiddleware)
 
 	// Add logging middleware
 	r.Use(middleware.LoggingMiddleware)
