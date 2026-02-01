@@ -91,6 +91,12 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 - 📈 Popular videos (most viewed of all time)
 - 📊 Video analytics (engagement metrics, like ratio)
 - 🔔 Notification system for user updates
+- 🔒 **HTTPS Support** - TLS configuration with secure cipher suites
+- 🛡️ **Security Headers** - Protection against XSS, clickjacking, and MIME sniffing
+- 📚 **API Documentation** - Swagger/OpenAPI 3.0 interactive documentation
+- 🗄️ **Database Migrations** - Version-controlled schema migrations
+- 🔄 **Real-time Notifications** - WebSocket support for instant updates
+- 🎬 **Video Transcoding** - Multiple quality options (240p to 4K)
 
 ### Backend Features (Microservices)
 - 🏗️ **Microservices Architecture** with independent services
@@ -104,6 +110,7 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 - 🔒 **Password Hashing** - Bcrypt for secure password storage
 - ✅ Input validation and error handling
 - 🔒 Rate limiting middleware (100 requests/minute)
+- 🛡️ **Security Headers Middleware** - X-Content-Type-Options, X-Frame-Options, HSTS, CSP
 - 📝 Request logging middleware
 - 🔎 Search videos by title, description, or channel name
 - 📈 View count increment API
@@ -120,8 +127,12 @@ For detailed microservices documentation, see [MICROSERVICES.md](MICROSERVICES.m
 - 📈 Popular videos API (most viewed all-time)
 - 📊 Video analytics API (engagement metrics)
 - 🔔 Notification API (create, read, mark as read)
+- 📡 **WebSocket Notifications** - Real-time push notifications
+- 🎬 **Video Transcoding Service** - FFmpeg-based multi-quality encoding
+- 📚 **Swagger/OpenAPI Documentation** - Interactive API docs at `/api/docs`
 - 🗄️ **Database per Service** pattern for data isolation
 - 🔄 **Connection Pooling** optimization for all services
+- 📋 **Migration Versioning** - Track and rollback database changes
 - 🧪 Comprehensive unit tests
 - 🧪 API integration tests for auth and upload
 - 🐳 Docker support with multi-stage builds
@@ -983,6 +994,140 @@ The project includes:
 - Code coverage reporting
 - Docker builds for all services
 - Database per service pattern
+
+## Advanced Features
+
+### HTTPS Support and Security Headers
+
+The application supports HTTPS with secure TLS configuration:
+
+**TLS Configuration:**
+```env
+TLS_ENABLED=true
+TLS_CERT_FILE=/path/to/cert.pem
+TLS_KEY_FILE=/path/to/key.pem
+```
+
+**Security Headers (automatically applied):**
+- `X-Content-Type-Options: nosniff` - Prevents MIME sniffing
+- `X-Frame-Options: DENY` - Prevents clickjacking
+- `X-XSS-Protection: 1; mode=block` - Enables XSS filtering
+- `Strict-Transport-Security` - Enforces HTTPS (HSTS)
+- `Content-Security-Policy` - Prevents XSS and data injection
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy` - Controls browser features
+
+### API Documentation (Swagger/OpenAPI)
+
+Interactive API documentation is available at:
+- **Backend (Monolith):** `http://localhost:8080/api/docs`
+- **API Gateway (Microservices):** `http://localhost:8080/api/docs`
+
+**OpenAPI JSON spec:** `http://localhost:8080/api/docs/openapi.json`
+
+The documentation includes:
+- All API endpoints with request/response schemas
+- Authentication requirements (Bearer JWT)
+- Parameter descriptions and examples
+- Try-it-out functionality
+
+### Database Migration Versioning
+
+The project includes a versioned migration system for all services:
+
+```go
+// Example: Run migrations
+manager := migrations.NewMigrationManager(db)
+for _, m := range migrations.GetAllMigrations() {
+    manager.Register(m)
+}
+manager.MigrateUp()
+
+// Rollback last migration
+manager.MigrateDown()
+
+// Check migration status
+manager.Status()
+```
+
+**Migration tracking table:**
+```sql
+CREATE TABLE schema_migrations (
+    version INTEGER PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    applied_at TIMESTAMP,
+    execution_time_ms INTEGER
+);
+```
+
+### Real-time Notifications (WebSockets)
+
+Connect to receive real-time notifications:
+
+**WebSocket Endpoint:** `ws://localhost:8080/api/users/{userId}/notifications/ws`
+
+**Message Format:**
+```json
+{
+  "type": "notification",
+  "payload": {
+    "id": 1,
+    "user_id": 123,
+    "type": "subscription",
+    "title": "New Video",
+    "message": "Your favorite channel uploaded a new video",
+    "link": "/videos/456",
+    "is_read": false,
+    "created_at": "2024-01-01T12:00:00Z"
+  }
+}
+```
+
+**Client Example (JavaScript):**
+```javascript
+const ws = new WebSocket('ws://localhost:8080/api/users/123/notifications/ws');
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  if (data.type === 'notification') {
+    showNotification(data.payload);
+  }
+};
+
+// Send ping to keep connection alive
+ws.send(JSON.stringify({ type: 'ping' }));
+```
+
+### Video Transcoding and Quality Options
+
+Videos can be transcoded to multiple quality levels:
+
+**Available Quality Presets:**
+| Quality | Resolution | Bitrate | Audio |
+|---------|-----------|---------|-------|
+| 240p | 426×240 | 400 kbps | 64 kbps |
+| 360p | 640×360 | 800 kbps | 96 kbps |
+| 480p | 854×480 | 1500 kbps | 128 kbps |
+| 720p | 1280×720 | 3000 kbps | 128 kbps |
+| 1080p | 1920×1080 | 6000 kbps | 192 kbps |
+| 1440p | 2560×1440 | 10000 kbps | 256 kbps |
+| 4K | 3840×2160 | 20000 kbps | 320 kbps |
+
+**Environment Variables:**
+```env
+FFMPEG_PATH=/usr/bin/ffmpeg
+TRANSCODING_OUTPUT_DIR=/uploads/transcoded
+```
+
+**API Endpoints:**
+```bash
+# Get available qualities for a video
+GET /api/videos/{id}/qualities
+
+# Get transcoding job status
+GET /api/videos/{id}/transcoding/status
+```
 
 ## Environment Variables
 

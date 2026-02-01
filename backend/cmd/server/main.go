@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/aung-arata/youtube-clone/backend/internal/database"
+	"github.com/aung-arata/youtube-clone/backend/internal/docs"
 	"github.com/aung-arata/youtube-clone/backend/internal/handlers"
 	"github.com/aung-arata/youtube-clone/backend/internal/middleware"
 	"github.com/aung-arata/youtube-clone/backend/internal/storage"
@@ -121,7 +122,11 @@ func main() {
 	api.HandleFunc("/users/{userId}/notifications/mark-all-read", notificationHandler.MarkAllAsRead).Methods("POST")
 	api.HandleFunc("/notifications", notificationHandler.CreateNotification).Methods("POST")
 	api.HandleFunc("/notifications/{id}/mark-read", notificationHandler.MarkAsRead).Methods("POST")
-	
+
+	// API Documentation routes (Swagger/OpenAPI)
+	api.HandleFunc("/docs", docs.SwaggerUIHandler).Methods("GET")
+	api.HandleFunc("/docs/openapi.json", docs.OpenAPISpecHandler).Methods("GET")
+
 	// Health check
 	api.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -131,10 +136,13 @@ func main() {
 
 	// Enable CORS
 	r.Use(corsMiddleware)
-	
+
+	// Add security headers middleware
+	r.Use(middleware.SecurityHeadersMiddleware)
+
 	// Add logging middleware
 	r.Use(middleware.LoggingMiddleware)
-	
+
 	// Add rate limiting middleware (100 requests per minute)
 	r.Use(middleware.RateLimitMiddleware(100))
 
