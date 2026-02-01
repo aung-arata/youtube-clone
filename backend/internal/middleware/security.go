@@ -15,9 +15,6 @@ func SecurityHeadersMiddleware(next http.Handler) http.Handler {
 		// X-Frame-Options: Prevents clickjacking attacks
 		w.Header().Set("X-Frame-Options", "DENY")
 
-		// X-XSS-Protection: Enables browser XSS filtering
-		w.Header().Set("X-XSS-Protection", "1; mode=block")
-
 		// Strict-Transport-Security: Enforces HTTPS
 		// max-age=31536000 (1 year), includeSubDomains
 		w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")

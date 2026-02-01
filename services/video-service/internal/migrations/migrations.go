@@ -95,7 +95,7 @@ func GetAllMigrations() []Migration {
 					height INTEGER,
 					format VARCHAR(20) DEFAULT 'mp4',
 					file_size BIGINT,
-					status VARCHAR(20) DEFAULT 'pending',
+					status VARCHAR(20) NOT NULL DEFAULT 'pending',
 					created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 					UNIQUE(video_id, quality)
 				);

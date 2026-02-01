@@ -29,8 +29,6 @@ func (c *TLSConfig) GetTLSConfig() *tls.Config {
 	return &tls.Config{
 		// Use TLS 1.2 as minimum version
 		MinVersion: tls.VersionTLS12,
-		// Prefer server cipher suites
-		PreferServerCipherSuites: true,
 		// Secure cipher suites
 		CipherSuites: []uint16{
 			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
