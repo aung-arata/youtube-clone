@@ -20,7 +20,7 @@ function Header({ onMenuClick, onSearch, darkMode, onToggleDarkMode }) {
       const response = await fetch(`${apiUrl}/api/users/${user.id}/notifications/unread-count`)
       if (response.ok) {
         const data = await response.json()
-        setNotificationCount(data.count || 0)
+        setNotificationCount(data.unread_count || 0)
       }
     } catch {
       // Silently fail

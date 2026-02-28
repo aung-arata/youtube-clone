@@ -11,6 +11,7 @@ import (
 	"github.com/aung-arata/youtube-clone/backend/internal/handlers"
 	"github.com/aung-arata/youtube-clone/backend/internal/middleware"
 	"github.com/aung-arata/youtube-clone/backend/internal/storage"
+	ws "github.com/aung-arata/youtube-clone/backend/internal/websocket"
 	"github.com/gorilla/mux"
 )
 
@@ -27,6 +28,10 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to initialize file storage:", err)
 	}
+
+	// Initialize WebSocket hub
+	hub := ws.NewHub()
+	go hub.Run()
 
 	// Create router
 	r := mux.NewRouter()
@@ -116,12 +121,16 @@ func main() {
 	api.HandleFunc("/playlists/{id}/videos/{videoId}", playlistHandler.RemoveVideoFromPlaylist).Methods("DELETE")
 	
 	// Notification routes
-	notificationHandler := handlers.NewNotificationHandler(db)
+	notificationHandler := handlers.NewNotificationHandler(db, hub)
 	api.HandleFunc("/users/{userId}/notifications", notificationHandler.GetUserNotifications).Methods("GET")
 	api.HandleFunc("/users/{userId}/notifications/unread-count", notificationHandler.GetUnreadCount).Methods("GET")
 	api.HandleFunc("/users/{userId}/notifications/mark-all-read", notificationHandler.MarkAllAsRead).Methods("POST")
 	api.HandleFunc("/notifications", notificationHandler.CreateNotification).Methods("POST")
 	api.HandleFunc("/notifications/{id}/mark-read", notificationHandler.MarkAsRead).Methods("POST")
+
+	// WebSocket route for real-time notifications
+	wsHandler := handlers.NewWebSocketHandler(hub)
+	r.HandleFunc("/ws/notifications", wsHandler.HandleConnection)
 
 	// API Documentation routes (Swagger/OpenAPI)
 	api.HandleFunc("/docs", docs.SwaggerUIHandler).Methods("GET")
