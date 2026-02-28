@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 
 const AuthContext = createContext(null)
 
@@ -9,15 +9,7 @@ export function AuthProvider({ children }) {
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
-  useEffect(() => {
-    if (token) {
-      fetchCurrentUser()
-    } else {
-      setLoading(false)
-    }
-  }, [])
-
-  const fetchCurrentUser = async () => {
+  const fetchCurrentUser = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -26,14 +18,26 @@ export function AuthProvider({ children }) {
         const data = await response.json()
         setUser(data)
       } else {
-        logout()
+        localStorage.removeItem('token')
+        setToken(null)
+        setUser(null)
       }
     } catch {
-      logout()
+      localStorage.removeItem('token')
+      setToken(null)
+      setUser(null)
     } finally {
       setLoading(false)
     }
-  }
+  }, [apiUrl, token])
+
+  useEffect(() => {
+    if (token) {
+      fetchCurrentUser()
+    } else {
+      setLoading(false)
+    }
+  }, [token, fetchCurrentUser])
 
   const login = async (email, password) => {
     const response = await fetch(`${apiUrl}/api/auth/login`, {

@@ -121,7 +121,8 @@ func main() {
 	api.HandleFunc("/playlists/{id}/videos/{videoId}", playlistHandler.RemoveVideoFromPlaylist).Methods("DELETE")
 	
 	// Notification routes
-	notificationHandler := handlers.NewNotificationHandler(db, hub)
+	notificationHandler := handlers.NewNotificationHandler(db)
+	notificationHandler.SetHub(hub)
 	api.HandleFunc("/users/{userId}/notifications", notificationHandler.GetUserNotifications).Methods("GET")
 	api.HandleFunc("/users/{userId}/notifications/unread-count", notificationHandler.GetUnreadCount).Methods("GET")
 	api.HandleFunc("/users/{userId}/notifications/mark-all-read", notificationHandler.MarkAllAsRead).Methods("POST")

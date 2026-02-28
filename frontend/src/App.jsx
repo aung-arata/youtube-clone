@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { Routes, Route, useNavigate } from 'react-router-dom'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import VideoGrid from './components/VideoGrid'
@@ -17,8 +17,10 @@ function AppLayout() {
     const saved = localStorage.getItem('darkMode')
     return saved === 'true'
   })
+  const [pendingSearch, setPendingSearch] = useState(null)
   const videoGridRef = useRef()
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuth()
 
   useEffect(() => {
@@ -30,14 +32,22 @@ function AppLayout() {
     }
   }, [darkMode])
 
-  const handleSearch = (query) => {
-    navigate('/')
-    setTimeout(() => {
-      if (videoGridRef.current && videoGridRef.current.fetchVideos) {
-        videoGridRef.current.fetchVideos(query)
-      }
-    }, 0)
-  }
+  // Execute pending search once we're on the home page and VideoGrid is mounted
+  useEffect(() => {
+    if (pendingSearch !== null && location.pathname === '/' && videoGridRef.current?.fetchVideos) {
+      videoGridRef.current.fetchVideos(pendingSearch)
+      setPendingSearch(null)
+    }
+  }, [pendingSearch, location.pathname])
+
+  const handleSearch = useCallback((query) => {
+    if (location.pathname === '/' && videoGridRef.current?.fetchVideos) {
+      videoGridRef.current.fetchVideos(query)
+    } else {
+      setPendingSearch(query)
+      navigate('/')
+    }
+  }, [location.pathname, navigate])
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode)

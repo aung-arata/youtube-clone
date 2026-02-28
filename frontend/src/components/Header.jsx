@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -8,13 +8,8 @@ function Header({ onMenuClick, onSearch, darkMode, onToggleDarkMode }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
-  useEffect(() => {
-    if (user) {
-      fetchNotificationCount()
-    }
-  }, [user])
-
-  const fetchNotificationCount = async () => {
+  const fetchNotificationCount = useCallback(async () => {
+    if (!user) return
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
       const response = await fetch(`${apiUrl}/api/users/${user.id}/notifications/unread-count`)
@@ -25,7 +20,11 @@ function Header({ onMenuClick, onSearch, darkMode, onToggleDarkMode }) {
     } catch {
       // Silently fail
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    fetchNotificationCount()
+  }, [fetchNotificationCount])
 
   const handleSearch = (e) => {
     e.preventDefault()

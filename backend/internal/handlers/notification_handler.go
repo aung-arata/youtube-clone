@@ -16,12 +16,13 @@ type NotificationHandler struct {
 	hub *ws.Hub
 }
 
-func NewNotificationHandler(db *sql.DB, hub ...*ws.Hub) *NotificationHandler {
-	h := &NotificationHandler{db: db}
-	if len(hub) > 0 {
-		h.hub = hub[0]
-	}
-	return h
+func NewNotificationHandler(db *sql.DB) *NotificationHandler {
+	return &NotificationHandler{db: db}
+}
+
+// SetHub sets the WebSocket hub for real-time notification delivery
+func (h *NotificationHandler) SetHub(hub *ws.Hub) {
+	h.hub = hub
 }
 
 // GetUserNotifications returns all notifications for a user
