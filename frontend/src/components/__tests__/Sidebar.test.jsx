@@ -1,10 +1,21 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import Sidebar from '../Sidebar'
 
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom')
+  return { ...actual, useNavigate: () => mockNavigate }
+})
+
 describe('Sidebar', () => {
+  beforeEach(() => {
+    mockNavigate.mockClear()
+  })
+
   it('renders sidebar with navigation items', () => {
-    render(<Sidebar isOpen={true} />)
+    render(<MemoryRouter><Sidebar isOpen={true} /></MemoryRouter>)
     
     expect(screen.getByText('Home')).toBeInTheDocument()
     expect(screen.getByText('Trending')).toBeInTheDocument()
@@ -12,7 +23,7 @@ describe('Sidebar', () => {
   })
 
   it('shows sidebar when isOpen is true', () => {
-    const { container } = render(<Sidebar isOpen={true} />)
+    const { container } = render(<MemoryRouter><Sidebar isOpen={true} /></MemoryRouter>)
     const sidebar = container.querySelector('aside')
     
     expect(sidebar).toBeInTheDocument()
@@ -20,24 +31,27 @@ describe('Sidebar', () => {
   })
 
   it('renders Library section', () => {
-    render(<Sidebar isOpen={true} />)
+    render(<MemoryRouter><Sidebar isOpen={true} /></MemoryRouter>)
     
     expect(screen.getByText('Library')).toBeInTheDocument()
     expect(screen.getByText('History')).toBeInTheDocument()
   })
 
-  it('renders navigation with icons', () => {
-    render(<Sidebar isOpen={true} />)
+  it('navigates when menu items are clicked', () => {
+    render(<MemoryRouter><Sidebar isOpen={true} /></MemoryRouter>)
     
-    const homeLink = screen.getByText('Home')
-    expect(homeLink).toBeInTheDocument()
-    
-    const trendingLink = screen.getByText('Trending')
-    expect(trendingLink).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Trending'))
+    expect(mockNavigate).toHaveBeenCalledWith('/trending')
+
+    fireEvent.click(screen.getByText('Home'))
+    expect(mockNavigate).toHaveBeenCalledWith('/')
+
+    fireEvent.click(screen.getByText('History'))
+    expect(mockNavigate).toHaveBeenCalledWith('/history')
   })
 
   it('applies correct styling classes', () => {
-    const { container } = render(<Sidebar isOpen={true} />)
+    const { container } = render(<MemoryRouter><Sidebar isOpen={true} /></MemoryRouter>)
     const sidebar = container.querySelector('aside')
     
     expect(sidebar).toHaveClass('bg-white', 'dark:bg-gray-800')

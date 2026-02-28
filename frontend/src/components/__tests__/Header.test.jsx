@@ -1,22 +1,33 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import Header from '../Header'
+
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom')
+  return { ...actual, useNavigate: () => mockNavigate }
+})
+
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({ user: null, logout: vi.fn() }),
+}))
 
 describe('Header', () => {
   it('renders header with YouTube Clone branding', () => {
-    render(<Header />)
+    render(<MemoryRouter><Header /></MemoryRouter>)
     expect(screen.getByText('YouTube Clone')).toBeInTheDocument()
   })
 
   it('renders search input with correct placeholder', () => {
-    render(<Header />)
+    render(<MemoryRouter><Header /></MemoryRouter>)
     const searchInput = screen.getByPlaceholderText('Search')
     expect(searchInput).toBeInTheDocument()
   })
 
   it('calls onMenuClick when menu button is clicked', () => {
     const handleMenuClick = vi.fn()
-    render(<Header onMenuClick={handleMenuClick} />)
+    render(<MemoryRouter><Header onMenuClick={handleMenuClick} /></MemoryRouter>)
     
     const menuButton = screen.getAllByRole('button')[0]
     fireEvent.click(menuButton)
@@ -25,7 +36,7 @@ describe('Header', () => {
   })
 
   it('updates search query when typing', () => {
-    render(<Header />)
+    render(<MemoryRouter><Header /></MemoryRouter>)
     const searchInput = screen.getByPlaceholderText('Search')
     
     fireEvent.change(searchInput, { target: { value: 'test query' } })
@@ -35,7 +46,7 @@ describe('Header', () => {
 
   it('calls onSearch with query when form is submitted', () => {
     const handleSearch = vi.fn()
-    render(<Header onSearch={handleSearch} />)
+    render(<MemoryRouter><Header onSearch={handleSearch} /></MemoryRouter>)
     
     const searchInput = screen.getByPlaceholderText('Search')
     const form = searchInput.closest('form')
@@ -48,7 +59,7 @@ describe('Header', () => {
 
   it('calls onSearch when search button is clicked', () => {
     const handleSearch = vi.fn()
-    render(<Header onSearch={handleSearch} />)
+    render(<MemoryRouter><Header onSearch={handleSearch} /></MemoryRouter>)
     
     const searchInput = screen.getByPlaceholderText('Search')
     fireEvent.change(searchInput, { target: { value: 'golang' } })
@@ -59,14 +70,8 @@ describe('Header', () => {
     expect(handleSearch).toHaveBeenCalledWith('golang')
   })
 
-  it('does not call onSearch if query is empty', () => {
-    const handleSearch = vi.fn()
-    render(<Header onSearch={handleSearch} />)
-    
-    const form = screen.getByPlaceholderText('Search').closest('form')
-    fireEvent.submit(form)
-    
-    // onSearch should be called but with empty string
-    expect(handleSearch).toHaveBeenCalledWith('')
+  it('shows Sign In button when user is not logged in', () => {
+    render(<MemoryRouter><Header /></MemoryRouter>)
+    expect(screen.getByText('Sign In')).toBeInTheDocument()
   })
 })

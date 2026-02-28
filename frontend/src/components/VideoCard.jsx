@@ -1,6 +1,9 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 
-function VideoCard({ video }) {
+function VideoCard({ video, compact }) {
+  const navigate = useNavigate()
+
   // Format views count
   const formatViews = (count) => {
     if (count >= 1000000) {
@@ -27,32 +30,34 @@ function VideoCard({ video }) {
   }
 
   const handleClick = async () => {
-    // Increment view count when video is clicked
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
-      await fetch(`${apiUrl}/api/videos/${video.id}/views`, {
-        method: 'POST',
-      })
-      
-      // Add to watch history
-      // TODO: Replace hardcoded userId with actual authenticated user from context
-      // For demo purposes, using userId = 1
-      const userId = 1
-      await fetch(`${apiUrl}/api/users/${userId}/history`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ video_id: video.id })
-      })
-    } catch (err) {
-      console.error('Error tracking video interaction:', err)
-    }
+    navigate(`/video/${video.id}`)
   }
 
   // Use placeholder if no thumbnail
   const thumbnail = video.thumbnail || 'https://via.placeholder.com/320x180/666/FFFFFF?text=No+Thumbnail'
   const channelAvatar = video.channel_avatar || `https://via.placeholder.com/36/4299E1/FFFFFF?text=${video.channel_name?.charAt(0) || 'U'}`
+
+  if (compact) {
+    return (
+      <div className="flex gap-2 cursor-pointer" onClick={handleClick}>
+        <div className="relative w-40 shrink-0">
+          <img src={thumbnail} alt={video.title} className="w-full aspect-video object-cover rounded-lg" />
+          {video.duration && (
+            <span className="absolute bottom-1 right-1 bg-black bg-opacity-80 text-white text-xs px-1 py-0.5 rounded">
+              {video.duration}
+            </span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-sm line-clamp-2 dark:text-gray-200">{video.title}</h3>
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{video.channel_name}</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">
+            {formatViews(video.views)} • {formatTimeAgo(video.uploaded_at)}
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="cursor-pointer" onClick={handleClick}>
