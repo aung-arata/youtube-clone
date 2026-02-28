@@ -40,7 +40,7 @@ func (h *PlanHandler) GetPlans(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := h.db.Query(query)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -50,14 +50,14 @@ func (h *PlanHandler) GetPlans(w http.ResponseWriter, r *http.Request) {
 		var p models.Plan
 		err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.MaxVideoQuality, &p.MaxUploadsPerMonth, &p.AdsFree, &p.CreatedAt, &p.UpdatedAt)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 		plans = append(plans, p)
 	}
 
 	if err = rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -87,7 +87,7 @@ func (h *PlanHandler) GetPlan(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Plan not found", http.StatusNotFound)
 		return
 	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -123,7 +123,7 @@ func (h *PlanHandler) CreatePlan(w http.ResponseWriter, r *http.Request) {
 		&p.ID, &p.Name, &p.Price, &p.MaxVideoQuality, &p.MaxUploadsPerMonth, &p.AdsFree, &p.CreatedAt, &p.UpdatedAt)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -175,7 +175,7 @@ func (h *PlanHandler) UpdatePlan(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Plan not found", http.StatusNotFound)
 		return
 	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -196,13 +196,13 @@ func (h *PlanHandler) DeletePlan(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.db.Exec(query, id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -237,7 +237,7 @@ func (h *PlanHandler) GetUserPlan(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "User has no plan assigned", http.StatusNotFound)
 		return
 	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -266,7 +266,7 @@ func (h *PlanHandler) UpdateUserPlan(w http.ResponseWriter, r *http.Request) {
 	var planExists bool
 	err = h.db.QueryRow("SELECT EXISTS(SELECT 1 FROM plans WHERE id = $1)", req.PlanID).Scan(&planExists)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 	if !planExists {
@@ -289,7 +289,7 @@ func (h *PlanHandler) UpdateUserPlan(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 

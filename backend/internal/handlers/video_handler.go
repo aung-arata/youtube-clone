@@ -149,7 +149,7 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := h.db.Query(query, args...)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -161,7 +161,7 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 			&v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes, &v.Category, &v.Duration,
 			&v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 		videos = append(videos, v)
@@ -200,7 +200,7 @@ func (h *VideoHandler) GetVideo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Video not found", http.StatusNotFound)
 		return
 	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -240,7 +240,7 @@ func (h *VideoHandler) CreateVideo(w http.ResponseWriter, r *http.Request) {
 		v.ChannelName, v.ChannelAvatar, v.Duration).Scan(&v.ID, &v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -271,7 +271,7 @@ func (h *VideoHandler) IncrementViews(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Video not found", http.StatusNotFound)
 		return
 	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -301,7 +301,7 @@ func (h *VideoHandler) LikeVideo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Video not found", http.StatusNotFound)
 		return
 	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -331,7 +331,7 @@ func (h *VideoHandler) DislikeVideo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Video not found", http.StatusNotFound)
 		return
 	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -350,7 +350,7 @@ func (h *VideoHandler) GetCategories(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := h.db.Query(query)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -359,7 +359,7 @@ func (h *VideoHandler) GetCategories(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var category string
 		if err := rows.Scan(&category); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 		categories = append(categories, category)
@@ -399,7 +399,7 @@ func (h *VideoHandler) GetRecommendations(w http.ResponseWriter, r *http.Request
 		http.Error(w, "Video not found", http.StatusNotFound)
 		return
 	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -415,7 +415,7 @@ func (h *VideoHandler) GetRecommendations(w http.ResponseWriter, r *http.Request
 
 	rows, err := h.db.Query(query, category, id, limit)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -427,14 +427,14 @@ func (h *VideoHandler) GetRecommendations(w http.ResponseWriter, r *http.Request
 			&v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes,
 			&v.Category, &v.Duration, &v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 		videos = append(videos, v)
 	}
 
 	if err = rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -468,7 +468,7 @@ func (h *VideoHandler) GetTrendingVideos(w http.ResponseWriter, r *http.Request)
 
 	rows, err := h.db.Query(query, limit)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -480,14 +480,14 @@ func (h *VideoHandler) GetTrendingVideos(w http.ResponseWriter, r *http.Request)
 			&v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes,
 			&v.Category, &v.Duration, &v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 		videos = append(videos, v)
 	}
 
 	if err = rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -519,7 +519,7 @@ func (h *VideoHandler) GetPopularVideos(w http.ResponseWriter, r *http.Request) 
 
 	rows, err := h.db.Query(query, limit)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -531,14 +531,14 @@ func (h *VideoHandler) GetPopularVideos(w http.ResponseWriter, r *http.Request) 
 			&v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes,
 			&v.Category, &v.Duration, &v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 		videos = append(videos, v)
 	}
 
 	if err = rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -583,7 +583,7 @@ func (h *VideoHandler) GetVideoAnalytics(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "Video not found", http.StatusNotFound)
 		return
 	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 

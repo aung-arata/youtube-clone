@@ -53,7 +53,7 @@ func (h *NotificationHandler) GetUserNotifications(w http.ResponseWriter, r *htt
 
 	rows, err := h.db.Query(query, args...)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -65,7 +65,7 @@ func (h *NotificationHandler) GetUserNotifications(w http.ResponseWriter, r *htt
 		err := rows.Scan(&n.ID, &n.UserID, &n.Type, &n.Title, &n.Message, 
 			&link, &n.IsRead, &n.CreatedAt)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 		if link.Valid {
@@ -107,7 +107,7 @@ func (h *NotificationHandler) CreateNotification(w http.ResponseWriter, r *http.
 		sql.NullString{String: req.Link, Valid: req.Link != ""}).
 		Scan(&notification.ID, &notification.CreatedAt)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -145,7 +145,7 @@ func (h *NotificationHandler) MarkAsRead(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "Notification not found", http.StatusNotFound)
 		return
 	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -173,7 +173,7 @@ func (h *NotificationHandler) MarkAllAsRead(w http.ResponseWriter, r *http.Reque
 
 	result, err := h.db.Exec(query, userID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -204,7 +204,7 @@ func (h *NotificationHandler) GetUnreadCount(w http.ResponseWriter, r *http.Requ
 	var count int
 	err = h.db.QueryRow(query, userID).Scan(&count)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 

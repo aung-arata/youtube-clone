@@ -111,7 +111,7 @@ func (h *UploadHandler) UploadVideo(w http.ResponseWriter, r *http.Request) {
 		if thumbnailURL != "" {
 			h.storage.DeleteFile(thumbnailURL)
 		}
-		http.Error(w, "Error creating video record: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Error creating video record", http.StatusInternalServerError)
 		return
 	}
 
