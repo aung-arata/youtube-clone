@@ -167,6 +167,11 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 		videos = append(videos, v)
 	}
 
+	if err = rows.Err(); err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
 	if videos == nil {
 		videos = []models.Video{}
 	}
@@ -363,6 +368,11 @@ func (h *VideoHandler) GetCategories(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		categories = append(categories, category)
+	}
+
+	if err = rows.Err(); err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
 	}
 
 	if categories == nil {

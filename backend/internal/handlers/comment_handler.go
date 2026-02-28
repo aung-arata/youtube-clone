@@ -53,6 +53,11 @@ func (h *CommentHandler) GetComments(w http.ResponseWriter, r *http.Request) {
 		comments = append(comments, c)
 	}
 
+	if err = rows.Err(); err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
 	if comments == nil {
 		comments = []models.Comment{}
 	}

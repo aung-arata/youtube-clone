@@ -74,6 +74,11 @@ func (h *NotificationHandler) GetUserNotifications(w http.ResponseWriter, r *htt
 		notifications = append(notifications, n)
 	}
 
+	if err = rows.Err(); err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
 	if notifications == nil {
 		notifications = []models.Notification{}
 	}

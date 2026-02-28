@@ -133,6 +133,11 @@ func (h *HistoryHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 		history = append(history, item)
 	}
 
+	if err = rows.Err(); err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
 	if history == nil {
 		history = []VideoWithHistory{}
 	}
