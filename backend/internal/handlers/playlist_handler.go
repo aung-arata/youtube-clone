@@ -52,7 +52,7 @@ func (h *PlaylistHandler) CreatePlaylist(w http.ResponseWriter, r *http.Request)
 	err = h.db.QueryRow(query, userID, req.Name, req.Description).Scan(
 		&playlist.ID, &playlist.UserID, &playlist.Name, &playlist.Description, &playlist.CreatedAt, &playlist.UpdatedAt)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -79,7 +79,7 @@ func (h *PlaylistHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Reques
 
 	rows, err := h.db.Query(query, userID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -88,14 +88,14 @@ func (h *PlaylistHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Reques
 	for rows.Next() {
 		var p models.Playlist
 		if err := rows.Scan(&p.ID, &p.UserID, &p.Name, &p.Description, &p.CreatedAt, &p.UpdatedAt); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 		playlists = append(playlists, p)
 	}
 
 	if err = rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -125,7 +125,7 @@ func (h *PlaylistHandler) GetPlaylist(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Playlist not found", http.StatusNotFound)
 		return
 	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -141,7 +141,7 @@ func (h *PlaylistHandler) GetPlaylist(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := h.db.Query(videoQuery, playlistID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -152,14 +152,14 @@ func (h *PlaylistHandler) GetPlaylist(w http.ResponseWriter, r *http.Request) {
 		if err := rows.Scan(&v.ID, &v.Title, &v.Description, &v.URL, &v.Thumbnail, &v.ChannelName,
 			&v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes, &v.Category, &v.Duration,
 			&v.UploadedAt, &v.CreatedAt, &v.UpdatedAt); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 		videos = append(videos, v)
 	}
 
 	if err = rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -206,7 +206,7 @@ func (h *PlaylistHandler) UpdatePlaylist(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "Playlist not found", http.StatusNotFound)
 		return
 	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -226,13 +226,13 @@ func (h *PlaylistHandler) DeletePlaylist(w http.ResponseWriter, r *http.Request)
 	query := `DELETE FROM playlists WHERE id = $1`
 	result, err := h.db.Exec(query, playlistID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -265,7 +265,7 @@ func (h *PlaylistHandler) AddVideoToPlaylist(w http.ResponseWriter, r *http.Requ
 	var maxPosition int
 	err = h.db.QueryRow("SELECT COALESCE(MAX(position), -1) FROM playlist_videos WHERE playlist_id = $1", playlistID).Scan(&maxPosition)
 	if err != nil && err != sql.ErrNoRows {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -284,7 +284,7 @@ func (h *PlaylistHandler) AddVideoToPlaylist(w http.ResponseWriter, r *http.Requ
 			http.Error(w, "Video already in playlist", http.StatusConflict)
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -311,13 +311,13 @@ func (h *PlaylistHandler) RemoveVideoFromPlaylist(w http.ResponseWriter, r *http
 	query := `DELETE FROM playlist_videos WHERE playlist_id = $1 AND video_id = $2`
 	result, err := h.db.Exec(query, playlistID, videoID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 

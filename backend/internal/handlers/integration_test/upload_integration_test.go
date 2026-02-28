@@ -8,6 +8,7 @@ import (
 "net/http/httptest"
 "os"
 "testing"
+"time"
 
 "github.com/aung-arata/youtube-clone/backend/internal/handlers"
 "github.com/aung-arata/youtube-clone/backend/internal/middleware"
@@ -59,9 +60,10 @@ thumbnailWriter.Write([]byte("fake image content"))
 writer.Close()
 
 // Mock database insert
+now := time.Now()
 mock.ExpectQuery("INSERT INTO videos").
 WillReturnRows(sqlmock.NewRows([]string{"id", "title", "description", "url", "thumbnail", "channel_name", "channel_avatar", "views", "likes", "dislikes", "category", "duration", "uploaded_at", "created_at", "updated_at"}).
-AddRow(1, "Test Video", "Test Description", "/uploads/videos/test.mp4", "/uploads/thumbnails/thumbnail.jpg", "Test Channel", "https://example.com/avatar.jpg", 0, 0, 0, "Technology", "10:30", "2024-01-01", "2024-01-01", "2024-01-01"))
+AddRow(1, "Test Video", "Test Description", "/uploads/videos/test.mp4", "/uploads/thumbnails/thumbnail.jpg", "Test Channel", "https://example.com/avatar.jpg", 0, 0, 0, "Technology", "10:30", now, now, now))
 
 req := httptest.NewRequest(http.MethodPost, "/upload/video", body)
 req.Header.Set("Content-Type", writer.FormDataContentType())

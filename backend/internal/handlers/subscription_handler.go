@@ -55,7 +55,7 @@ func (h *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request) 
 			http.Error(w, "Already subscribed to this channel", http.StatusConflict)
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -82,13 +82,13 @@ func (h *SubscriptionHandler) Unsubscribe(w http.ResponseWriter, r *http.Request
 	query := `DELETE FROM subscriptions WHERE user_id = $1 AND channel_name = $2`
 	result, err := h.db.Exec(query, userID, channelName)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -118,7 +118,7 @@ func (h *SubscriptionHandler) GetUserSubscriptions(w http.ResponseWriter, r *htt
 
 	rows, err := h.db.Query(query, userID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -127,14 +127,14 @@ func (h *SubscriptionHandler) GetUserSubscriptions(w http.ResponseWriter, r *htt
 	for rows.Next() {
 		var sub models.Subscription
 		if err := rows.Scan(&sub.ID, &sub.UserID, &sub.ChannelName, &sub.CreatedAt); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 		subscriptions = append(subscriptions, sub)
 	}
 
 	if err = rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -161,7 +161,7 @@ func (h *SubscriptionHandler) CheckSubscription(w http.ResponseWriter, r *http.R
 	query := `SELECT EXISTS(SELECT 1 FROM subscriptions WHERE user_id = $1 AND channel_name = $2)`
 	err = h.db.QueryRow(query, userID, channelName).Scan(&exists)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 

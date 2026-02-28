@@ -54,7 +54,7 @@ func (h *HistoryHandler) AddToHistory(w http.ResponseWriter, r *http.Request) {
 		&history.ID, &history.UserID, &history.VideoID, &history.WatchedAt)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -108,7 +108,7 @@ func (h *HistoryHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := h.db.Query(query, userID, limit, offset)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -127,10 +127,15 @@ func (h *HistoryHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 			&item.Category, &item.Duration, &item.UploadedAt, &item.CreatedAt, &item.UpdatedAt,
 			&item.WatchedAt)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 		history = append(history, item)
+	}
+
+	if err = rows.Err(); err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
 	}
 
 	if history == nil {

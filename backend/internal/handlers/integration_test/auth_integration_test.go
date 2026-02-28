@@ -6,6 +6,7 @@ import (
 "net/http"
 "net/http/httptest"
 "testing"
+"time"
 
 "github.com/aung-arata/youtube-clone/backend/internal/handlers"
 "github.com/DATA-DOG/go-sqlmock"
@@ -36,10 +37,11 @@ WithArgs("test@example.com").
 WillReturnRows(sqlmock.NewRows([]string{"exists"}).AddRow(false))
 
 // Mock database insert
+now := time.Now()
 mock.ExpectQuery("INSERT INTO users").
 WithArgs("testuser", "test@example.com", sqlmock.AnyArg(), "https://example.com/avatar.jpg", "user").
 WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "avatar", "role", "plan_id", "created_at", "updated_at"}).
-AddRow(1, "testuser", "test@example.com", "https://example.com/avatar.jpg", "user", nil, "2024-01-01", "2024-01-01"))
+AddRow(1, "testuser", "test@example.com", "https://example.com/avatar.jpg", "user", nil, now, now))
 
 body, _ := json.Marshal(signupData)
 req := httptest.NewRequest(http.MethodPost, "/auth/signup", bytes.NewBuffer(body))
@@ -129,10 +131,11 @@ loginData := map[string]interface{}{
 hashedPassword := "$2a$10$YourHashedPasswordHere"
 
 // Mock database query
+now := time.Now()
 mock.ExpectQuery("SELECT id, username, email, password, avatar, role, plan_id, created_at, updated_at FROM users").
 WithArgs("test@example.com").
 WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "password", "avatar", "role", "plan_id", "created_at", "updated_at"}).
-AddRow(1, "testuser", "test@example.com", hashedPassword, "", "user", nil, "2024-01-01", "2024-01-01"))
+AddRow(1, "testuser", "test@example.com", hashedPassword, "", "user", nil, now, now))
 
 body, _ := json.Marshal(loginData)
 req := httptest.NewRequest(http.MethodPost, "/auth/login", bytes.NewBuffer(body))
