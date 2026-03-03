@@ -7,15 +7,22 @@ import (
 	"strconv"
 
 	"github.com/aung-arata/youtube-clone/backend/internal/models"
+	ws "github.com/aung-arata/youtube-clone/backend/internal/websocket"
 	"github.com/gorilla/mux"
 )
 
 type NotificationHandler struct {
-	db *sql.DB
+	db  *sql.DB
+	hub *ws.Hub
 }
 
 func NewNotificationHandler(db *sql.DB) *NotificationHandler {
 	return &NotificationHandler{db: db}
+}
+
+// SetHub sets the WebSocket hub for real-time notification delivery
+func (h *NotificationHandler) SetHub(hub *ws.Hub) {
+	h.hub = hub
 }
 
 // GetUserNotifications returns all notifications for a user
@@ -122,6 +129,20 @@ func (h *NotificationHandler) CreateNotification(w http.ResponseWriter, r *http.
 	notification.Message = req.Message
 	notification.Link = req.Link
 	notification.IsRead = false
+
+	// Push notification via WebSocket if hub is available
+	if h.hub != nil {
+		h.hub.SendNotification(req.UserID, ws.NotificationPayload{
+			ID:        notification.ID,
+			UserID:    notification.UserID,
+			Type:      notification.Type,
+			Title:     notification.Title,
+			Message:   notification.Message,
+			Link:      notification.Link,
+			IsRead:    notification.IsRead,
+			CreatedAt: notification.CreatedAt,
+		})
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

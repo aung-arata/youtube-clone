@@ -1,20 +1,26 @@
 import React from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 function Sidebar({ isOpen }) {
+  const navigate = useNavigate()
+  const location = useLocation()
+
   const menuItems = [
-    { icon: 'home', label: 'Home' },
-    { icon: 'trending', label: 'Trending' },
-    { icon: 'subscriptions', label: 'Subscriptions' },
+    { icon: 'home', label: 'Home', path: '/' },
+    { icon: 'trending', label: 'Trending', path: '/trending' },
+    { icon: 'subscriptions', label: 'Subscriptions', path: '/subscriptions' },
   ]
 
   const libraryItems = [
-    { icon: 'library', label: 'Library' },
-    { icon: 'history', label: 'History' },
-    { icon: 'watch-later', label: 'Watch Later' },
-    { icon: 'liked', label: 'Liked Videos' },
+    { icon: 'library', label: 'Library', path: '/' },
+    { icon: 'history', label: 'History', path: '/history' },
+    { icon: 'watch-later', label: 'Watch Later', path: '/' },
+    { icon: 'liked', label: 'Liked Videos', path: '/' },
   ]
 
   if (!isOpen) return null
+
+  const isActive = (path) => location.pathname === path
 
   return (
     <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
@@ -23,7 +29,10 @@ function Sidebar({ isOpen }) {
           {menuItems.map((item) => (
             <button
               key={item.label}
-              className="w-full flex items-center gap-6 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm dark:text-gray-200"
+              onClick={() => navigate(item.path)}
+              className={`w-full flex items-center gap-6 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm dark:text-gray-200 ${
+                isActive(item.path) ? 'bg-gray-100 dark:bg-gray-700 font-semibold' : ''
+              }`}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {item.icon === 'home' && (
@@ -47,7 +56,10 @@ function Sidebar({ isOpen }) {
           {libraryItems.map((item) => (
             <button
               key={item.label}
-              className="w-full flex items-center gap-6 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm dark:text-gray-200"
+              onClick={() => navigate(item.path)}
+              className={`w-full flex items-center gap-6 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm dark:text-gray-200 ${
+                isActive(item.path) && item.label === 'History' ? 'bg-gray-100 dark:bg-gray-700 font-semibold' : ''
+              }`}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {item.icon === 'library' && (

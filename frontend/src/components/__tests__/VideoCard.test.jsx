@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import VideoCard from '../VideoCard'
+
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom')
+  return { ...actual, useNavigate: () => mockNavigate }
+})
 
 describe('VideoCard', () => {
   const mockVideo = {
@@ -16,12 +23,11 @@ describe('VideoCard', () => {
   }
 
   beforeEach(() => {
-    // Mock fetch
-    global.fetch = vi.fn()
+    mockNavigate.mockClear()
   })
 
   it('renders video card with correct information', () => {
-    render(<VideoCard video={mockVideo} />)
+    render(<MemoryRouter><VideoCard video={mockVideo} /></MemoryRouter>)
     
     expect(screen.getByText('Test Video Title')).toBeInTheDocument()
     expect(screen.getByText('Test Channel')).toBeInTheDocument()
@@ -31,30 +37,30 @@ describe('VideoCard', () => {
   })
 
   it('formats view count correctly for millions', () => {
-    render(<VideoCard video={mockVideo} />)
+    render(<MemoryRouter><VideoCard video={mockVideo} /></MemoryRouter>)
     expect(screen.getByText(/1.5M views/)).toBeInTheDocument()
   })
 
   it('formats view count correctly for thousands', () => {
     const videoWithThousands = { ...mockVideo, views: 5400 }
-    render(<VideoCard video={videoWithThousands} />)
+    render(<MemoryRouter><VideoCard video={videoWithThousands} /></MemoryRouter>)
     expect(screen.getByText(/5.4K views/)).toBeInTheDocument()
   })
 
   it('formats view count correctly for small numbers', () => {
     const videoWithSmallViews = { ...mockVideo, views: 42 }
-    render(<VideoCard video={videoWithSmallViews} />)
+    render(<MemoryRouter><VideoCard video={videoWithSmallViews} /></MemoryRouter>)
     expect(screen.getByText(/42 views/)).toBeInTheDocument()
   })
 
   it('formats time ago correctly', () => {
-    render(<VideoCard video={mockVideo} />)
+    render(<MemoryRouter><VideoCard video={mockVideo} /></MemoryRouter>)
     expect(screen.getByText(/2 days ago/)).toBeInTheDocument()
   })
 
   it('displays placeholder thumbnail when thumbnail is missing', () => {
     const videoWithoutThumbnail = { ...mockVideo, thumbnail: '' }
-    render(<VideoCard video={videoWithoutThumbnail} />)
+    render(<MemoryRouter><VideoCard video={videoWithoutThumbnail} /></MemoryRouter>)
     
     const img = screen.getByAltText('Test Video Title')
     expect(img).toHaveAttribute('src')
@@ -63,62 +69,33 @@ describe('VideoCard', () => {
 
   it('displays placeholder channel avatar when avatar is missing', () => {
     const videoWithoutAvatar = { ...mockVideo, channel_avatar: '' }
-    render(<VideoCard video={videoWithoutAvatar} />)
+    render(<MemoryRouter><VideoCard video={videoWithoutAvatar} /></MemoryRouter>)
     
     const img = screen.getByAltText('Test Channel')
     expect(img).toHaveAttribute('src')
     expect(img.getAttribute('src')).toContain('placeholder')
   })
 
-  it('calls API to increment views and add to history when clicked', async () => {
-    global.fetch = vi.fn(() => Promise.resolve({ ok: true }))
-    
-    render(<VideoCard video={mockVideo} />)
+  it('navigates to video page when clicked', () => {
+    render(<MemoryRouter><VideoCard video={mockVideo} /></MemoryRouter>)
     const card = screen.getByText('Test Video Title').closest('div').parentElement
     
     fireEvent.click(card)
     
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledTimes(2)
-    })
-    
-    // Check view increment call
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining(`/api/videos/${mockVideo.id}/views`),
-      expect.objectContaining({ method: 'POST' })
-    )
-    
-    // Check history call
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/users/1/history'),
-      expect.objectContaining({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ video_id: mockVideo.id })
-      })
-    )
-  })
-
-  it('handles API errors gracefully when tracking interactions', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    global.fetch = vi.fn(() => Promise.reject(new Error('API Error')))
-    
-    render(<VideoCard video={mockVideo} />)
-    const card = screen.getByText('Test Video Title').closest('div').parentElement
-    
-    fireEvent.click(card)
-    
-    await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalled()
-    })
-    
-    consoleErrorSpy.mockRestore()
+    expect(mockNavigate).toHaveBeenCalledWith('/video/1')
   })
 
   it('does not display duration if not provided', () => {
     const videoWithoutDuration = { ...mockVideo, duration: '' }
-    render(<VideoCard video={videoWithoutDuration} />)
+    render(<MemoryRouter><VideoCard video={videoWithoutDuration} /></MemoryRouter>)
     
     expect(screen.queryByText('10:30')).not.toBeInTheDocument()
+  })
+
+  it('renders compact mode correctly', () => {
+    render(<MemoryRouter><VideoCard video={mockVideo} compact /></MemoryRouter>)
+    
+    expect(screen.getByText('Test Video Title')).toBeInTheDocument()
+    expect(screen.getByText('Test Channel')).toBeInTheDocument()
   })
 })

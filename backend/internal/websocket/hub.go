@@ -81,6 +81,11 @@ func NewHub() *Hub {
 	}
 }
 
+// Register sends a client registration request to the hub
+func (h *Hub) Register(client *Client) {
+	h.register <- client
+}
+
 // Run starts the hub's main loop
 func (h *Hub) Run() {
 	for {
