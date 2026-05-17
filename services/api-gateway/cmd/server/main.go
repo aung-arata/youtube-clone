@@ -33,6 +33,7 @@ func main() {
 	// Video routes - more specific paths first
 	api.PathPrefix("/upload").HandlerFunc(proxyToService(videoServiceURL, "/upload"))
 	api.PathPrefix("/uploads/").HandlerFunc(proxyToService(videoServiceURL, "/uploads/"))
+	api.PathPrefix("/videos/{videoId}/comments/{commentId}/replies").HandlerFunc(proxyToService(commentServiceURL, "/videos"))
 	api.PathPrefix("/videos/{videoId}/comments").HandlerFunc(proxyToService(commentServiceURL, "/videos"))
 	api.PathPrefix("/videos").HandlerFunc(proxyToService(videoServiceURL, "/videos"))
 	api.PathPrefix("/playlists").HandlerFunc(proxyToService(videoServiceURL, "/playlists"))

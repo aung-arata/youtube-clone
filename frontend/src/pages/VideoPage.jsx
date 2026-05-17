@@ -1,7 +1,131 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import VideoCard from '../components/VideoCard'
+
+// ── Reply thread for a single comment ────────────────────────────────────────
+function CommentReplies({ videoId, comment, user, token, apiUrl, formatDate }) {
+  const [replies, setReplies] = useState([])
+  const [expanded, setExpanded] = useState(false)
+  const [replyText, setReplyText] = useState('')
+  const [showReplyBox, setShowReplyBox] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [loadingReplies, setLoadingReplies] = useState(false)
+
+  const fetchReplies = useCallback(async () => {
+    setLoadingReplies(true)
+    try {
+      const res = await fetch(`${apiUrl}/api/videos/${videoId}/comments/${comment.id}/replies`)
+      if (res.ok) setReplies(await res.json())
+    } catch { /* silent */ } finally {
+      setLoadingReplies(false)
+    }
+  }, [apiUrl, videoId, comment.id])
+
+  const handleExpand = () => {
+    if (!expanded) fetchReplies()
+    setExpanded(e => !e)
+  }
+
+  const handleReplySubmit = async (e) => {
+    e.preventDefault()
+    if (!replyText.trim() || !user) return
+    setSubmitting(true)
+    try {
+      const res = await fetch(`${apiUrl}/api/videos/${videoId}/comments/${comment.id}/replies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ user_id: user.id, username: user.username, content: replyText.trim() }),
+      })
+      if (res.ok) {
+        setReplyText('')
+        setShowReplyBox(false)
+        setExpanded(true)
+        fetchReplies()
+      }
+    } catch { /* silent */ } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div>
+      {/* Reply / expand controls */}
+      <div className="flex items-center gap-4 mt-2 ml-13">
+        {user && (
+          <button
+            onClick={() => setShowReplyBox(s => !s)}
+            className="text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400"
+          >
+            Reply
+          </button>
+        )}
+        {comment.reply_count > 0 && (
+          <button
+            onClick={handleExpand}
+            className="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            <svg className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+            {expanded ? 'Hide' : `${comment.reply_count} ${comment.reply_count === 1 ? 'reply' : 'replies'}`}
+          </button>
+        )}
+      </div>
+
+      {/* Inline reply input */}
+      {showReplyBox && user && (
+        <form onSubmit={handleReplySubmit} className="flex gap-2 mt-2 ml-13">
+          <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0 mt-1">
+            {user.username.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1">
+            <input
+              autoFocus
+              type="text"
+              value={replyText}
+              onChange={e => setReplyText(e.target.value)}
+              placeholder={`@${comment.username} `}
+              className="w-full px-0 py-1 border-b border-gray-300 dark:border-gray-600 bg-transparent text-sm dark:text-white focus:outline-none focus:border-blue-500"
+            />
+            <div className="flex justify-end gap-2 mt-1">
+              <button type="button" onClick={() => { setShowReplyBox(false); setReplyText('') }}
+                className="px-3 py-1 text-xs rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300">
+                Cancel
+              </button>
+              <button type="submit" disabled={!replyText.trim() || submitting}
+                className="px-3 py-1 text-xs bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50">
+                Reply
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
+
+      {/* Replies list */}
+      {expanded && (
+        <div className="ml-13 mt-2 space-y-3">
+          {loadingReplies ? (
+            <p className="text-xs text-gray-500 dark:text-gray-400">Loading…</p>
+          ) : replies.map(reply => (
+            <div key={reply.id} className="flex gap-2">
+              <div className="w-7 h-7 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0 mt-0.5">
+                {(reply.username || 'U').charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-xs dark:text-white">{reply.username || 'User'}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{formatDate(reply.created_at)}</span>
+                </div>
+                <p className="text-sm dark:text-gray-300 mt-0.5">{reply.content}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function VideoPage() {
   const { id } = useParams()
@@ -285,7 +409,7 @@ function VideoPage() {
                 <div className="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center text-white font-semibold shrink-0">
                   {(comment.username || 'U').charAt(0).toUpperCase()}
                 </div>
-                <div>
+                <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-sm dark:text-white">{comment.username || 'User'}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -293,6 +417,14 @@ function VideoPage() {
                     </span>
                   </div>
                   <p className="text-sm dark:text-gray-300 mt-1">{comment.content}</p>
+                  <CommentReplies
+                    videoId={id}
+                    comment={comment}
+                    user={user}
+                    token={token}
+                    apiUrl={apiUrl}
+                    formatDate={formatDate}
+                  />
                 </div>
               </div>
             ))}

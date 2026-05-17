@@ -130,7 +130,9 @@ curl http://localhost:8080/api/videos/1
 ---
 
 #### POST /videos
-Create a new video.
+Create a new video (JSON metadata only, no file upload).
+
+> **For file uploads** use `POST /upload/video` (multipart form). See [Video Upload](#post-uploadvideo).
 
 **Request Body:**
 ```json
@@ -279,7 +281,7 @@ curl -X POST http://localhost:8080/api/videos/1/dislike
 ### Comments
 
 #### GET /videos/{videoId}/comments
-Retrieve all comments for a specific video.
+Retrieve all top-level comments for a specific video (with reply counts).
 
 **Path Parameters:**
 - `videoId` (required): Video ID
@@ -465,7 +467,162 @@ curl -X DELETE http://localhost:8080/api/comments/1
 
 ---
 
-## Rate Limiting
+#### GET /videos/{videoId}/comments/{commentId}/replies
+Retrieve all replies to a specific comment.
+
+**Path Parameters:**
+- `videoId` (required): Video ID
+- `commentId` (required): Parent comment ID
+
+**Example Request:**
+```bash
+curl http://localhost:8080/api/videos/1/comments/5/replies
+```
+
+**Response:**
+```json
+[
+  {
+    "id": 12,
+    "video_id": 1,
+    "parent_id": 5,
+    "user_id": 2,
+    "username": "testuser2",
+    "content": "@testuser totally agree!",
+    "created_at": "2026-05-17T15:30:00Z",
+    "updated_at": "2026-05-17T15:30:00Z"
+  }
+]
+```
+
+**Status Codes:**
+- `200 OK` - Replies retrieved successfully
+- `400 Bad Request` - Invalid ID
+- `500 Internal Server Error` - Database error
+
+---
+
+#### POST /videos/{videoId}/comments/{commentId}/replies
+Create a reply to a comment.
+
+**Path Parameters:**
+- `videoId` (required): Video ID
+- `commentId` (required): Parent comment ID
+
+**Request Body:**
+```json
+{
+  "user_id": 2,
+  "username": "testuser2",
+  "content": "@testuser great point!"
+}
+```
+
+**Required Fields:**
+- `user_id` - Replying user's ID
+- `username` - Replying user's username
+- `content` - Reply text (non-empty)
+
+**Example Request:**
+```bash
+curl -X POST http://localhost:8080/api/videos/1/comments/5/replies \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"user_id": 2, "username": "testuser2", "content": "@testuser nice!"}'
+```
+
+**Response:**
+```json
+{
+  "id": 12,
+  "video_id": 1,
+  "parent_id": 5,
+  "user_id": 2,
+  "username": "testuser2",
+  "content": "@testuser nice!",
+  "created_at": "2026-05-17T15:30:00Z",
+  "updated_at": "2026-05-17T15:30:00Z"
+}
+```
+
+**Status Codes:**
+- `201 Created` - Reply created successfully
+- `400 Bad Request` - Invalid ID or missing required fields
+- `404 Not Found` - Parent comment not found
+- `500 Internal Server Error` - Database error
+
+---
+
+## Video Upload (Video Service)
+
+### POST /upload/video
+Upload a video file with metadata. Requires authentication.
+
+**Headers:**
+- `Authorization: Bearer <token>` (required)
+- `Content-Type: multipart/form-data`
+
+**Form Fields:**
+- `video` (file, required): Video file — MP4, MOV, AVI, MKV, WebM, max 500 MB
+- `title` (required): Video title
+- `channel_name` (required): Channel name
+- `description` (optional): Video description
+- `category` (optional): Video category
+- `channel_avatar` (optional): Channel avatar URL
+- `thumbnail` (file, optional): Thumbnail image — JPG, PNG, GIF, WebP, max 5 MB
+- `duration` (optional): Duration string (e.g. `10:30`)
+
+**Example Request:**
+```bash
+curl -X POST http://localhost:8080/api/upload/video \
+  -H "Authorization: Bearer <token>" \
+  -F "video=@/path/to/video.mp4" \
+  -F "title=My Video" \
+  -F "channel_name=mychannel" \
+  -F "description=Video description" \
+  -F "category=Gaming" \
+  -F "thumbnail=@/path/to/thumb.jpg"
+```
+
+**Response:**
+```json
+{
+  "id": 5,
+  "title": "My Video",
+  "url": "/uploads/videos/my_video_1234567890.mp4",
+  "thumbnail": "/uploads/thumbnails/my_video_1234567890.jpg",
+  "channel_name": "mychannel",
+  "category": "Gaming",
+  "duration": "00:00",
+  "views": 0,
+  "uploaded_at": "2026-05-17T14:49:29Z"
+}
+```
+
+**Status Codes:**
+- `201 Created` - Upload successful
+- `400 Bad Request` - Missing required fields, unsupported format, or file too large
+- `401 Unauthorized` - Missing or invalid token
+- `500 Internal Server Error` - Storage or database error
+
+---
+
+### DELETE /upload/video
+Delete an uploaded video and its thumbnail.
+
+**Headers:**
+- `Authorization: Bearer <token>` (required)
+
+**Request Body:**
+```json
+{ "url": "/uploads/videos/my_video_1234567890.mp4" }
+```
+
+**Status Codes:**
+- `200 OK` - Deleted successfully
+- `400 Bad Request` - Missing URL
+- `401 Unauthorized`
+- `500 Internal Server Error`
 
 The API implements rate limiting to prevent abuse:
 - **Limit:** 100 requests per minute per IP address

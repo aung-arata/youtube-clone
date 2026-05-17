@@ -60,6 +60,7 @@ func runMigrations(db *sql.DB) error {
 	CREATE TABLE IF NOT EXISTS comments (
 		id SERIAL PRIMARY KEY,
 		video_id INTEGER NOT NULL,
+		parent_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
 		user_id INTEGER NOT NULL,
 		username VARCHAR(100) NOT NULL DEFAULT '',
 		content TEXT NOT NULL,
@@ -72,10 +73,14 @@ func runMigrations(db *sql.DB) error {
 		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='comments' AND column_name='username') THEN
 			ALTER TABLE comments ADD COLUMN username VARCHAR(100) NOT NULL DEFAULT '';
 		END IF;
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='comments' AND column_name='parent_id') THEN
+			ALTER TABLE comments ADD COLUMN parent_id INTEGER REFERENCES comments(id) ON DELETE CASCADE;
+		END IF;
 	END $$;
 
 	CREATE INDEX IF NOT EXISTS idx_comments_video_id ON comments (video_id);
 	CREATE INDEX IF NOT EXISTS idx_comments_user_id ON comments (user_id);
+	CREATE INDEX IF NOT EXISTS idx_comments_parent_id ON comments (parent_id);
 	`
 
 	_, err := db.Exec(query)

@@ -26,6 +26,8 @@ func main() {
 	commentHandler := handlers.NewCommentHandler(db)
 	r.HandleFunc("/videos/{videoId}/comments", commentHandler.GetComments).Methods("GET")
 	r.HandleFunc("/videos/{videoId}/comments", commentHandler.CreateComment).Methods("POST")
+	r.HandleFunc("/videos/{videoId}/comments/{commentId}/replies", commentHandler.GetReplies).Methods("GET")
+	r.HandleFunc("/videos/{videoId}/comments/{commentId}/replies", commentHandler.CreateReply).Methods("POST")
 	r.HandleFunc("/comments/{id}", commentHandler.GetComment).Methods("GET")
 	r.HandleFunc("/comments/{id}", commentHandler.UpdateComment).Methods("PUT")
 	r.HandleFunc("/comments/{id}", commentHandler.DeleteComment).Methods("DELETE")
