@@ -1,5 +1,9 @@
 # API Documentation
 
+All requests go through the **API Gateway** at `http://localhost:8080/api`. The gateway routes each request to the appropriate microservice.
+
+> **Note:** Endpoints for subscriptions and playlists listed below are implemented in the legacy monolith (`backend/`). They are not yet ported to the microservices gateway. For microservices-only endpoints see the **Notifications** and **Video Analytics** sections.
+
 ## Base URL
 ```
 http://localhost:8080/api
@@ -27,26 +31,35 @@ Check if the API is running.
 ### Videos
 
 #### GET /videos
-Retrieve a list of videos with optional search and pagination.
+Retrieve a list of videos with optional search, filtering, and pagination.
 
 **Query Parameters:**
-- `q` (optional): Search query to filter videos by title, description, or channel name
-- `page` (optional): Page number for pagination (default: 1, min: 1)
-- `limit` (optional): Number of videos per page (default: 20, max: 100)
+- `q` (optional): Search query — filters by title, description, or channel name
+- `category` (optional): Filter by category name
+- `page` (optional): Page number (default: 1, min: 1)
+- `limit` (optional): Items per page (default: 20, max: 100)
+- `sort_by` (optional): Sort field — `views`, `likes`, `date`, `title` (default: `date`)
+- `order` (optional): Sort order — `asc`, `desc` (default: `desc`)
+- `uploaded_after` (optional): Only return videos uploaded after this ISO 8601 timestamp
+- `min_duration` (optional): Minimum video duration in seconds
+- `max_duration` (optional): Maximum video duration in seconds
 
-**Example Request:**
+**Example Requests:**
 ```bash
-# Get all videos
+# All videos
 curl http://localhost:8080/api/videos
 
-# Search for videos
+# Search
 curl "http://localhost:8080/api/videos?q=react"
 
-# Get videos with pagination
+# Paginated
 curl "http://localhost:8080/api/videos?page=2&limit=10"
 
-# Search with pagination
-curl "http://localhost:8080/api/videos?q=tutorial&page=1&limit=5"
+# Sort by views, filter videos longer than 5 minutes
+curl "http://localhost:8080/api/videos?sort_by=views&order=desc&min_duration=300"
+
+# Videos uploaded in the last week, sorted by likes
+curl "http://localhost:8080/api/videos?uploaded_after=2024-01-15T00:00:00Z&sort_by=likes"
 ```
 
 **Response:**
@@ -979,4 +992,200 @@ curl "http://localhost:8080/api/videos/1/recommendations?limit=5"
 - `200 OK` - Recommendations retrieved successfully
 - `404 Not Found` - Video not found
 - `500 Internal Server Error` - Database error
+
+---
+
+## Video Analytics (Video Service)
+
+### GET /videos/trending
+Get videos with the most views in the last 7 days.
+
+```bash
+curl http://localhost:8080/api/videos/trending
+```
+
+**Response:** Array of video objects sorted by recent view count descending.
+
+---
+
+### GET /videos/popular
+Get videos with the most all-time views.
+
+```bash
+curl http://localhost:8080/api/videos/popular
+```
+
+**Response:** Array of video objects sorted by total view count descending.
+
+---
+
+### GET /videos/{id}/analytics
+Get engagement metrics for a specific video.
+
+```bash
+curl http://localhost:8080/api/videos/1/analytics
+```
+
+**Response:**
+```json
+{
+  "video_id": 1,
+  "title": "Building a YouTube Clone",
+  "views": 125000,
+  "likes": 4800,
+  "dislikes": 120,
+  "like_ratio": 0.976,
+  "uploaded_at": "2024-01-10T10:30:00Z"
+}
+```
+
+**Status Codes:**
+- `200 OK` - Analytics retrieved
+- `404 Not Found` - Video not found
+
+---
+
+### GET /videos/categories
+Get all unique video category names.
+
+```bash
+curl http://localhost:8080/api/videos/categories
+```
+
+**Response:**
+```json
+["Education", "Gaming", "Music", "Technology", "General"]
+```
+
+---
+
+## Notifications (Notification Service)
+
+### GET /users/{userId}/notifications
+Get notifications for a user.
+
+**Query Parameters:**
+- `unread` (optional): `"true"` to return only unread notifications
+- `limit` (optional): Max items to return (default: 50, max: 100)
+
+```bash
+curl http://localhost:8080/api/users/1/notifications
+curl "http://localhost:8080/api/users/1/notifications?unread=true"
+```
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "user_id": 1,
+    "type": "subscription",
+    "title": "New Video from Channel",
+    "message": "Your favorite channel just uploaded a new video!",
+    "link": "/videos/123",
+    "is_read": false,
+    "created_at": "2024-01-01T12:00:00Z"
+  }
+]
+```
+
+---
+
+### GET /users/{userId}/notifications/unread-count
+Get the count of unread notifications.
+
+```bash
+curl http://localhost:8080/api/users/1/notifications/unread-count
+```
+
+**Response:**
+```json
+{ "count": 3 }
+```
+
+---
+
+### POST /notifications
+Create a new notification.
+
+```bash
+curl -X POST http://localhost:8080/api/notifications \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": 1,
+    "type": "subscription",
+    "title": "New Video from Channel",
+    "message": "Your favorite channel just uploaded a new video!",
+    "link": "/videos/123"
+  }'
+```
+
+**Status Codes:**
+- `201 Created` - Notification created
+- `400 Bad Request` - Invalid input
+
+---
+
+### POST /notifications/{id}/mark-read
+Mark a single notification as read.
+
+```bash
+curl -X POST http://localhost:8080/api/notifications/1/mark-read
+```
+
+**Status Codes:**
+- `200 OK` - Marked as read
+- `404 Not Found` - Notification not found
+
+---
+
+### POST /users/{userId}/notifications/mark-all-read
+Mark all notifications as read for a user.
+
+```bash
+curl -X POST http://localhost:8080/api/users/1/notifications/mark-all-read
+```
+
+**Status Codes:**
+- `200 OK` - All marked as read
+
+---
+
+## Real-time Notifications (WebSocket)
+
+Connect to receive push notifications without polling.
+
+**Endpoint:** `ws://localhost:8080/api/users/{userId}/notifications/ws`
+
+**Message format (server → client):**
+```json
+{
+  "type": "notification",
+  "payload": {
+    "id": 1,
+    "user_id": 123,
+    "type": "subscription",
+    "title": "New Video",
+    "message": "Your favorite channel uploaded a new video",
+    "link": "/videos/456",
+    "is_read": false,
+    "created_at": "2024-01-01T12:00:00Z"
+  }
+}
+```
+
+**Client example (JavaScript):**
+```javascript
+const ws = new WebSocket('ws://localhost:8080/api/users/123/notifications/ws');
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  if (data.type === 'notification') {
+    showNotification(data.payload);
+  }
+};
+
+// Keep alive
+setInterval(() => ws.send(JSON.stringify({ type: 'ping' })), 30000);
+```
 

@@ -26,65 +26,40 @@ Thank you for your interest in contributing to this YouTube Clone project! This 
 ## Development Setup
 
 ### Quick Setup (Recommended)
-Use the development setup script:
+
 ```bash
-./dev-setup.sh
+git clone https://github.com/YOUR_USERNAME/youtube-clone.git
+cd youtube-clone
+docker compose -f docker-compose.microservices.yml up -d
 ```
 
-### Manual Setup
-
-1. **Start PostgreSQL:**
-   ```bash
-   docker-compose up -d postgres
-   ```
-
-2. **Set up Backend:**
-   ```bash
-   cd backend
-   cp .env.example .env
-   go mod download
-   go run cmd/server/main.go
-   ```
-
-3. **Set up Frontend:**
-   ```bash
-   cd frontend
-   cp .env.example .env
-   npm install
-   npm run dev
-   ```
-
-### Seed Database (Optional)
-```bash
-docker-compose exec postgres psql -U postgres -d youtube_clone < backend/seed.sql
-```
+See [GETTING_STARTED.md](GETTING_STARTED.md) for local (non-Docker) setup.
 
 ## Project Structure
 
 ```
 youtube-clone/
-├── backend/              # Go backend
-│   ├── cmd/
-│   │   └── server/      # Main application entry point
-│   ├── internal/
-│   │   ├── handlers/    # HTTP request handlers
-│   │   ├── models/      # Data models
-│   │   ├── database/    # Database connection and migrations
-│   │   └── middleware/  # HTTP middleware
-│   ├── Dockerfile
-│   └── seed.sql         # Sample data
-│
-├── frontend/            # React frontend
+├── frontend/            # React + Tailwind CSS
 │   ├── src/
 │   │   ├── components/  # React components
-│   │   ├── App.jsx      # Main app component
-│   │   └── main.jsx     # Entry point
+│   │   ├── App.jsx
+│   │   └── main.jsx
 │   ├── Dockerfile
 │   └── nginx.conf
 │
-├── .github/
-│   └── workflows/       # CI/CD pipelines
-└── docker-compose.yml   # Docker services configuration
+├── services/
+│   ├── api-gateway/           # Go — routing, CORS, rate limiting
+│   ├── video-service/         # Go — video CRUD, search, analytics
+│   ├── user-service/          # Go — user profiles
+│   ├── comment-service/       # Go — comment CRUD
+│   ├── history-service/       # Go — watch history
+│   ├── notification-service/  # Go — notifications, WebSocket
+│   └── admin-service/         # PHP/Symfony — admin dashboard, CMS
+│
+├── backend/                   # Deprecated monolith (reference only)
+├── docker-compose.microservices.yml
+├── docker-compose.yml         # Deprecated monolith compose
+└── .github/workflows/         # CI/CD pipelines
 ```
 
 ## Coding Standards
@@ -136,21 +111,15 @@ function VideoCard({ video }) {
 
 ## Testing
 
-### Backend Tests
+See [DEVELOPMENT.md](DEVELOPMENT.md) for full test and lint commands.
 
-Run all tests:
+### Backend (Go)
+
+Run tests inside the service directory:
 ```bash
-cd backend
+cd services/video-service
 go test ./...
-```
-
-Run tests with coverage:
-```bash
 go test -cover ./...
-```
-
-Run tests with race detection:
-```bash
 go test -race ./...
 ```
 
@@ -183,12 +152,18 @@ npm test
 
 1. **Ensure all tests pass:**
    ```bash
-   cd backend && go test ./...
+   cd services/video-service && go test ./...
+   cd frontend && npm test
    ```
 
 2. **Format your code:**
    ```bash
-   cd backend && gofmt -w .
+   # Go (inside service directory)
+   gofmt -w .
+   golangci-lint run
+   
+   # Frontend
+   cd frontend && npm run lint
    ```
 
 3. **Commit your changes:**
@@ -231,21 +206,19 @@ npm test
 ### Port Already in Use
 If you get "port already in use" errors:
 ```bash
-# Find process using port 8080
-lsof -i :8080
-# Kill the process
+lsof -i :8080  # find process
 kill -9 <PID>
 ```
 
 ### Database Connection Issues
-- Ensure PostgreSQL is running: `docker-compose ps`
-- Check credentials in `.env` file
-- Verify database exists: `docker-compose exec postgres psql -U postgres -l`
+- Ensure the correct service database is running: `docker compose -f docker-compose.microservices.yml ps`
+- Check env vars in your shell or compose file
+- See [ENVIRONMENT.md](ENVIRONMENT.md) for all variables
 
 ### Frontend Not Connecting to Backend
-- Verify backend is running on port 8080
-- Check `VITE_API_URL` in frontend `.env`
-- Check CORS configuration in backend
+- Verify the API Gateway is running on port 8080
+- Check `VITE_API_URL` in `frontend/.env`
+- Check CORS configuration in `services/api-gateway`
 
 ## Getting Help
 

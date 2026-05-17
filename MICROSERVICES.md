@@ -2,7 +2,7 @@
 
 ## Overview
 
-This YouTube Clone has been refactored from a monolithic architecture to a microservices architecture. The application is now split into 5 independent services, each with its own database.
+This YouTube Clone uses a microservices architecture with 7 independent services (6 in Go, 1 in PHP), each with its own PostgreSQL database.
 
 ## Services
 
@@ -49,6 +49,31 @@ This YouTube Clone has been refactored from a monolithic architecture to a micro
   - Retrieve watch history with pagination
 - **Database**: history_service_db
 - **Technology**: Go, PostgreSQL
+- **Note**: Calls Video Service to enrich history entries with video details
+
+### 6. Notification Service (Port 8086)
+- **Purpose**: Manage user notifications with real-time delivery
+- **Responsibilities**:
+  - Create and store notifications
+  - Mark notifications as read
+  - Unread notification count
+  - WebSocket endpoint for real-time push
+- **Database**: notification_service_db
+- **Technology**: Go, PostgreSQL
+
+### 7. Admin Service (Port 8085)
+- **Purpose**: Administrative dashboard and content management
+- **Responsibilities**:
+  - Admin user management and roles
+  - Content moderation queue
+  - Blog post and documentation CMS
+  - Help center articles
+  - Email template management
+  - Batch reporting and analytics
+  - Integration with all Go services via HTTP
+- **Database**: admin_service_db
+- **Technology**: PHP 8.2+, Symfony
+- **Note**: Schema is auto-applied from `services/admin-service/config/schema.sql` on first start
 
 ## Quick Start
 
@@ -90,6 +115,12 @@ curl http://localhost:8083/health
 
 # History Service
 curl http://localhost:8084/health
+
+# Notification Service
+curl http://localhost:8086/health
+
+# Admin Service
+curl http://localhost:8085/health
 ```
 
 ## Data Flow Example
@@ -121,6 +152,10 @@ Each service owns its database and schema:
 - **user_service_db**: users table
 - **comment_service_db**: comments table
 - **history_service_db**: watch_history table
+- **notification_service_db**: notifications table
+- **admin_service_db**: admin/CMS tables (Symfony-managed)
+
+See [DATABASE.md](DATABASE.md) for full schemas.
 
 ## Advantages Over Monolithic
 
@@ -135,8 +170,8 @@ Each service owns its database and schema:
 
 The original monolithic backend is still available in the `backend/` directory for reference. To migrate:
 
-1. The data would need to be migrated from the single `youtube_clone` database to the four separate databases
-2. Update any direct database queries in the frontend to use the API Gateway endpoints
+1. Data would need to be migrated from `youtube_clone` into the six separate service databases
+2. Ensure all client requests go through the API Gateway endpoints
 
 ## Troubleshooting
 
