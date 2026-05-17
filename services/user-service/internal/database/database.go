@@ -35,8 +35,8 @@ func InitDB() (*sql.DB, error) {
 	}
 
 	// Configure connection pool
-	db.SetMaxOpenConns(25)              // Maximum number of open connections
-	db.SetMaxIdleConns(5)               // Maximum number of idle connections
+	db.SetMaxOpenConns(25)                 // Maximum number of open connections
+	db.SetMaxIdleConns(5)                  // Maximum number of idle connections
 	db.SetConnMaxLifetime(5 * time.Minute) // Maximum lifetime of a connection (5 minutes)
 
 	// Run migrations
@@ -61,11 +61,24 @@ func runMigrations(db *sql.DB) error {
 		id SERIAL PRIMARY KEY,
 		username VARCHAR(50) UNIQUE NOT NULL,
 		email VARCHAR(100) UNIQUE NOT NULL,
+		password VARCHAR(255) NOT NULL DEFAULT '',
 		avatar VARCHAR(500),
+		role VARCHAR(20) NOT NULL DEFAULT 'user',
 		plan_id INTEGER,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
+
+	-- Add missing columns to existing tables (idempotent)
+	DO $$
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='password') THEN
+			ALTER TABLE users ADD COLUMN password VARCHAR(255) NOT NULL DEFAULT '';
+		END IF;
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='role') THEN
+			ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user';
+		END IF;
+	END $$;
 
 	CREATE TABLE IF NOT EXISTS plans (
 		id SERIAL PRIMARY KEY,

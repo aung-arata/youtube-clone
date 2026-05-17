@@ -34,21 +34,23 @@ func main() {
 	api.PathPrefix("/videos").HandlerFunc(proxyToService(videoServiceURL, "/videos"))
 	api.PathPrefix("/playlists").HandlerFunc(proxyToService(videoServiceURL, "/playlists"))
 
-	// User routes - proxy to user-service
+	// User routes - more specific paths first to avoid catch-all /users swallowing them
 	api.PathPrefix("/users/{id}/history").HandlerFunc(proxyToService(historyServiceURL, "/users"))
 	api.PathPrefix("/users/{id}/subscriptions").HandlerFunc(proxyToService(userServiceURL, "/users"))
 	api.PathPrefix("/users/{id}/playlists").HandlerFunc(proxyToService(videoServiceURL, "/users"))
 	api.PathPrefix("/users/{id}/plan").HandlerFunc(proxyToService(userServiceURL, "/users"))
+
+	// Notification routes - must be before generic /users catch-all
+	api.PathPrefix("/users/{userId}/notifications").HandlerFunc(proxyToService(notificationServiceURL, "/users"))
+	api.PathPrefix("/notifications").HandlerFunc(proxyToService(notificationServiceURL, "/notifications"))
+
+	// User routes catch-all - proxy to user-service
 	api.PathPrefix("/users").HandlerFunc(proxyToService(userServiceURL, "/users"))
 	api.PathPrefix("/plans").HandlerFunc(proxyToService(userServiceURL, "/plans"))
 
 	// Comment routes - proxy to comment-service
 	api.PathPrefix("/comments").HandlerFunc(proxyToService(commentServiceURL, "/comments"))
 	api.PathPrefix("/videos/{videoId}/comments").HandlerFunc(proxyToService(commentServiceURL, "/videos"))
-
-	// Notification routes - proxy to notification-service
-	api.PathPrefix("/users/{userId}/notifications").HandlerFunc(proxyToService(notificationServiceURL, "/users"))
-	api.PathPrefix("/notifications").HandlerFunc(proxyToService(notificationServiceURL, "/notifications"))
 
 	// API Documentation routes (Swagger/OpenAPI)
 	api.HandleFunc("/docs", docs.SwaggerUIHandler).Methods("GET")
