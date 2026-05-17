@@ -31,6 +31,8 @@ func main() {
 	api.PathPrefix("/auth").HandlerFunc(proxyToService(userServiceURL, "/auth"))
 
 	// Video routes - proxy to video-service
+	api.PathPrefix("/upload").HandlerFunc(proxyToService(videoServiceURL, "/upload"))
+	api.PathPrefix("/uploads/").HandlerFunc(proxyToService(videoServiceURL, "/uploads/"))
 	api.PathPrefix("/videos").HandlerFunc(proxyToService(videoServiceURL, "/videos"))
 	api.PathPrefix("/playlists").HandlerFunc(proxyToService(videoServiceURL, "/playlists"))
 

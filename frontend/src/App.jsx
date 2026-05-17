@@ -9,6 +9,7 @@ import VideoPage from './pages/VideoPage'
 import TrendingPage from './pages/TrendingPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
+import UploadPage from './pages/UploadPage'
 import { useAuth } from './contexts/AuthContext'
 
 function AppLayout() {
@@ -71,6 +72,7 @@ function AppLayout() {
             <Route path="/history" element={<WatchHistory userId={user?.id} />} />
             <Route path="/profile/:userId" element={<UserProfile userId={user?.id} />} />
             <Route path="/subscriptions" element={<SubscriptionsPlaceholder />} />
+            <Route path="/upload" element={<UploadPage />} />
           </Routes>
         </main>
       </div>
