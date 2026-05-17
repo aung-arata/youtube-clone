@@ -35,8 +35,8 @@ func InitDB() (*sql.DB, error) {
 	}
 
 	// Configure connection pool
-	db.SetMaxOpenConns(25)              // Maximum number of open connections
-	db.SetMaxIdleConns(5)               // Maximum number of idle connections
+	db.SetMaxOpenConns(25)                 // Maximum number of open connections
+	db.SetMaxIdleConns(5)                  // Maximum number of idle connections
 	db.SetConnMaxLifetime(5 * time.Minute) // Maximum lifetime of a connection (5 minutes)
 
 	// Run migrations
@@ -61,10 +61,18 @@ func runMigrations(db *sql.DB) error {
 		id SERIAL PRIMARY KEY,
 		video_id INTEGER NOT NULL,
 		user_id INTEGER NOT NULL,
+		username VARCHAR(100) NOT NULL DEFAULT '',
 		content TEXT NOT NULL,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
+
+	DO $$
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='comments' AND column_name='username') THEN
+			ALTER TABLE comments ADD COLUMN username VARCHAR(100) NOT NULL DEFAULT '';
+		END IF;
+	END $$;
 
 	CREATE INDEX IF NOT EXISTS idx_comments_video_id ON comments (video_id);
 	CREATE INDEX IF NOT EXISTS idx_comments_user_id ON comments (user_id);

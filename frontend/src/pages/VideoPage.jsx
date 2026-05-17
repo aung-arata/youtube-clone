@@ -158,16 +158,17 @@ function VideoPage() {
       <div className="flex-1">
         {/* Video Player */}
         <div className="relative bg-black rounded-lg overflow-hidden aspect-video mb-4">
-          {video.video_url ? (
+          {video.url ? (
             <video
-              src={video.video_url}
+              src={video.url.startsWith('/uploads') ? `${apiUrl}/api${video.url}` : video.url}
               controls
+              autoPlay
               className="w-full h-full"
-              poster={video.thumbnail}
+              poster={video.thumbnail ? `${apiUrl}/api${video.thumbnail}` : undefined}
             />
           ) : (
             <img
-              src={video.thumbnail || 'https://via.placeholder.com/854x480/333/FFFFFF?text=Video+Player'}
+              src={video.thumbnail ? `${apiUrl}/api${video.thumbnail}` : `https://via.placeholder.com/854x480/333/FFFFFF?text=Video+Player`}
               alt={video.title}
               className="w-full h-full object-cover"
             />
@@ -179,11 +180,23 @@ function VideoPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
-            <img
-              src={video.channel_avatar || `https://via.placeholder.com/40/4299E1/FFFFFF?text=${video.channel_name?.charAt(0) || 'U'}`}
-              alt={video.channel_name}
-              className="w-10 h-10 rounded-full"
-            />
+            {video.channel_avatar && !video.channel_avatar.startsWith('/uploads') ? (
+              <img
+                src={video.channel_avatar}
+                alt={video.channel_name}
+                className="w-10 h-10 rounded-full object-cover"
+              />
+            ) : video.channel_avatar ? (
+              <img
+                src={`${apiUrl}/api${video.channel_avatar}`}
+                alt={video.channel_name}
+                className="w-10 h-10 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold shrink-0">
+                {(video.channel_name || 'U').charAt(0).toUpperCase()}
+              </div>
+            )}
             <div>
               <p className="font-semibold dark:text-white">{video.channel_name}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">

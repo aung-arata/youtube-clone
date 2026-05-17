@@ -1,6 +1,13 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+
+function resolveMediaUrl(url) {
+  if (!url) return null
+  return url.startsWith('/uploads') ? `${API_URL}/api${url}` : url
+}
+
 function VideoCard({ video, compact }) {
   const navigate = useNavigate()
 
@@ -34,8 +41,8 @@ function VideoCard({ video, compact }) {
   }
 
   // Use placeholder if no thumbnail
-  const thumbnail = video.thumbnail || 'https://via.placeholder.com/320x180/666/FFFFFF?text=No+Thumbnail'
-  const channelAvatar = video.channel_avatar || `https://via.placeholder.com/36/4299E1/FFFFFF?text=${video.channel_name?.charAt(0) || 'U'}`
+  const thumbnail = resolveMediaUrl(video.thumbnail) || 'https://via.placeholder.com/320x180/666/FFFFFF?text=No+Thumbnail'
+  const channelAvatar = resolveMediaUrl(video.channel_avatar) || `https://via.placeholder.com/36/4299E1/FFFFFF?text=${video.channel_name?.charAt(0) || 'U'}`
 
   if (compact) {
     return (

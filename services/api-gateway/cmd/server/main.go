@@ -30,9 +30,10 @@ func main() {
 	// Auth routes - proxy to user-service (public routes)
 	api.PathPrefix("/auth").HandlerFunc(proxyToService(userServiceURL, "/auth"))
 
-	// Video routes - proxy to video-service
+	// Video routes - more specific paths first
 	api.PathPrefix("/upload").HandlerFunc(proxyToService(videoServiceURL, "/upload"))
 	api.PathPrefix("/uploads/").HandlerFunc(proxyToService(videoServiceURL, "/uploads/"))
+	api.PathPrefix("/videos/{videoId}/comments").HandlerFunc(proxyToService(commentServiceURL, "/videos"))
 	api.PathPrefix("/videos").HandlerFunc(proxyToService(videoServiceURL, "/videos"))
 	api.PathPrefix("/playlists").HandlerFunc(proxyToService(videoServiceURL, "/playlists"))
 
@@ -52,7 +53,6 @@ func main() {
 
 	// Comment routes - proxy to comment-service
 	api.PathPrefix("/comments").HandlerFunc(proxyToService(commentServiceURL, "/comments"))
-	api.PathPrefix("/videos/{videoId}/comments").HandlerFunc(proxyToService(commentServiceURL, "/videos"))
 
 	// API Documentation routes (Swagger/OpenAPI)
 	api.HandleFunc("/docs", docs.SwaggerUIHandler).Methods("GET")

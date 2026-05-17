@@ -29,7 +29,7 @@ func (h *CommentHandler) GetComments(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `
-		SELECT id, video_id, user_id, content, created_at, updated_at
+		SELECT id, video_id, user_id, username, content, created_at, updated_at
 		FROM comments
 		WHERE video_id = $1
 		ORDER BY created_at DESC
@@ -45,7 +45,7 @@ func (h *CommentHandler) GetComments(w http.ResponseWriter, r *http.Request) {
 	var comments []models.Comment
 	for rows.Next() {
 		var c models.Comment
-		err := rows.Scan(&c.ID, &c.VideoID, &c.UserID, &c.Content, &c.CreatedAt, &c.UpdatedAt)
+		err := rows.Scan(&c.ID, &c.VideoID, &c.UserID, &c.Username, &c.Content, &c.CreatedAt, &c.UpdatedAt)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -71,13 +71,13 @@ func (h *CommentHandler) GetComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `
-		SELECT id, video_id, user_id, content, created_at, updated_at
+		SELECT id, video_id, user_id, username, content, created_at, updated_at
 		FROM comments
 		WHERE id = $1
 	`
 
 	var c models.Comment
-	err = h.db.QueryRow(query, id).Scan(&c.ID, &c.VideoID, &c.UserID, &c.Content, &c.CreatedAt, &c.UpdatedAt)
+	err = h.db.QueryRow(query, id).Scan(&c.ID, &c.VideoID, &c.UserID, &c.Username, &c.Content, &c.CreatedAt, &c.UpdatedAt)
 
 	if err == sql.ErrNoRows {
 		http.Error(w, "Comment not found", http.StatusNotFound)
@@ -120,13 +120,12 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `
-		INSERT INTO comments (video_id, user_id, content)
-		VALUES ($1, $2, $3)
+		INSERT INTO comments (video_id, user_id, username, content)
+		VALUES ($1, $2, $3, $4)
 		RETURNING id, created_at, updated_at
 	`
 
-	err = h.db.QueryRow(query, c.VideoID, c.UserID, c.Content).Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
-
+	err = h.db.QueryRow(query, c.VideoID, c.UserID, c.Username, c.Content).Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
