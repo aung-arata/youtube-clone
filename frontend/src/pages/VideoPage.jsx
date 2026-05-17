@@ -148,8 +148,11 @@ function VideoPage() {
   }, [id])
 
   const trackView = async () => {
+    const viewKey = `view_counted_${id}`
+    if (sessionStorage.getItem(viewKey)) return
     try {
       await fetch(`${apiUrl}/api/videos/${id}/views`, { method: 'POST' })
+      sessionStorage.setItem(viewKey, '1')
       if (user) {
         await fetch(`${apiUrl}/api/users/${user.id}/history`, {
           method: 'POST',

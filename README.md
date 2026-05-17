@@ -48,6 +48,15 @@ docker compose -f docker-compose.microservices.yml up -d
 | Admin Service | http://localhost:8085 |
 | Notification Service | http://localhost:8086 |
 
+## Features
+
+- Video upload with drag-and-drop, thumbnail preview, and real-time progress
+- Video playback with view count (deduplicated per session — no inflating on reload)
+- Comments with nested replies (one level, YouTube-style `@mention` prefill)
+- User auth (JWT), channel profiles, watch history
+- Notification system, playlist management
+- Admin panel (PHP/Symfony)
+
 ## Tech Stack
 
 | Layer | Technology |
