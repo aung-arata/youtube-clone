@@ -34,7 +34,7 @@ See [MICROSERVICES.md](MICROSERVICES.md) for details on each service.
 ```bash
 git clone https://github.com/aung-arata/youtube-clone.git
 cd youtube-clone
-docker compose -f docker-compose.microservices.yml up -d
+docker compose up -d
 ```
 
 | Service | URL |

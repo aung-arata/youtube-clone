@@ -18,19 +18,19 @@ git clone https://github.com/aung-arata/youtube-clone.git
 cd youtube-clone
 
 # Build and start all services
-docker compose -f docker-compose.microservices.yml up -d
+docker compose up -d
 
 # View logs (all services)
-docker compose -f docker-compose.microservices.yml logs -f
+docker compose logs -f
 
 # View logs (specific service)
-docker compose -f docker-compose.microservices.yml logs -f video-service
+docker compose logs -f video-service
 
 # Rebuild after code changes
-docker compose -f docker-compose.microservices.yml up -d --build
+docker compose up -d --build
 
 # Stop everything
-docker compose -f docker-compose.microservices.yml down
+docker compose down
 ```
 
 **Running services:**
@@ -139,15 +139,4 @@ npm run build
 cd services/video-service
 go build -o video-service cmd/server/main.go
 ./video-service
-```
-
-## Monolithic Backend (Deprecated)
-
-The original single-binary backend is in `backend/` and `docker-compose.yml` for reference only.
-Use the microservices setup for all new work.
-
-```bash
-# Legacy monolith with Docker
-docker compose up -d
-# Frontend: http://localhost:80  Backend API: http://localhost:8080
 ```
