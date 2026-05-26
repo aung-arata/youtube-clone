@@ -5,7 +5,7 @@ services:
     container_name: video_db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: video_service_db
     volumes:
       - video_db_data:/var/lib/postgresql/data
@@ -22,7 +22,7 @@ services:
     container_name: user_db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: user_service_db
     volumes:
       - user_db_data:/var/lib/postgresql/data
@@ -39,7 +39,7 @@ services:
     container_name: comment_db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: comment_service_db
     volumes:
       - comment_db_data:/var/lib/postgresql/data
@@ -56,7 +56,7 @@ services:
     container_name: history_db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: history_service_db
     volumes:
       - history_db_data:/var/lib/postgresql/data
@@ -73,7 +73,7 @@ services:
     container_name: admin_db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: admin_service_db
     volumes:
       - admin_db_data:/var/lib/postgresql/data
@@ -91,7 +91,7 @@ services:
     container_name: notification_db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: notification_service_db
     volumes:
       - notification_db_data:/var/lib/postgresql/data
@@ -113,7 +113,7 @@ services:
       DB_HOST: video-db
       DB_PORT: 5432
       DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: video_service_db
       PORT: 8081
     ports:
@@ -134,7 +134,7 @@ services:
       DB_HOST: user-db
       DB_PORT: 5432
       DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: user_service_db
       PORT: 8082
     ports:
@@ -155,7 +155,7 @@ services:
       DB_HOST: comment-db
       DB_PORT: 5432
       DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: comment_service_db
       PORT: 8083
     ports:
@@ -176,7 +176,7 @@ services:
       DB_HOST: history-db
       DB_PORT: 5432
       DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: history_service_db
       VIDEO_SERVICE_URL: http://video-service:8081
       PORT: 8084
@@ -200,7 +200,7 @@ services:
       DB_HOST: notification-db
       DB_PORT: 5432
       DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: notification_service_db
       PORT: 8086
     ports:
@@ -243,7 +243,7 @@ services:
       dockerfile: Dockerfile
     container_name: admin_service
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@admin-db:5432/admin_service_db
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@admin-db:5432/admin_service_db
       PORT: 8085
       VIDEO_SERVICE_URL: http://video-service:8081
       USER_SERVICE_URL: http://user-service:8082

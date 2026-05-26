@@ -17,6 +17,10 @@ The fastest way to run the full stack:
 git clone https://github.com/aung-arata/youtube-clone.git
 cd youtube-clone
 
+# Set up environment variables (required before first run)
+cp .env.example .env
+# Edit .env and set a strong POSTGRES_PASSWORD
+
 # Build and start all services
 docker compose up -d
 
