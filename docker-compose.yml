@@ -1,46 +1,264 @@
-version: '3.8'
-
 services:
-  postgres:
+  # PostgreSQL databases for each microservice
+  video-db:
     image: postgres:15-alpine
-    container_name: youtube_clone_db
+    container_name: video_db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: youtube_clone
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: video_service_db
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - video_db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - youtube_network
+      - microservices_network
 
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: youtube_clone_backend
+  user-db:
+    image: postgres:15-alpine
+    container_name: user_db
     environment:
-      DB_HOST: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: user_service_db
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices_network
+
+  comment-db:
+    image: postgres:15-alpine
+    container_name: comment_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: comment_service_db
+    volumes:
+      - comment_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices_network
+
+  history-db:
+    image: postgres:15-alpine
+    container_name: history_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: history_service_db
+    volumes:
+      - history_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices_network
+
+  admin-db:
+    image: postgres:15-alpine
+    container_name: admin_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: admin_service_db
+    volumes:
+      - admin_db_data:/var/lib/postgresql/data
+      - ./services/admin-service/config/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices_network
+
+  notification-db:
+    image: postgres:15-alpine
+    container_name: notification_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: notification_service_db
+    volumes:
+      - notification_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices_network
+
+  # Microservices
+  video-service:
+    build:
+      context: ./services/video-service
+      dockerfile: Dockerfile
+    container_name: video_service
+    environment:
+      DB_HOST: video-db
       DB_PORT: 5432
       DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: youtube_clone
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: video_service_db
+      PORT: 8081
+    ports:
+      - "8081:8081"
+    depends_on:
+      video-db:
+        condition: service_healthy
+    networks:
+      - microservices_network
+    restart: unless-stopped
+
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: user_service
+    environment:
+      DB_HOST: user-db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: user_service_db
+      PORT: 8082
+    ports:
+      - "8082:8082"
+    depends_on:
+      user-db:
+        condition: service_healthy
+    networks:
+      - microservices_network
+    restart: unless-stopped
+
+  comment-service:
+    build:
+      context: ./services/comment-service
+      dockerfile: Dockerfile
+    container_name: comment_service
+    environment:
+      DB_HOST: comment-db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: comment_service_db
+      PORT: 8083
+    ports:
+      - "8083:8083"
+    depends_on:
+      comment-db:
+        condition: service_healthy
+    networks:
+      - microservices_network
+    restart: unless-stopped
+
+  history-service:
+    build:
+      context: ./services/history-service
+      dockerfile: Dockerfile
+    container_name: history_service
+    environment:
+      DB_HOST: history-db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: history_service_db
+      VIDEO_SERVICE_URL: http://video-service:8081
+      PORT: 8084
+    ports:
+      - "8084:8084"
+    depends_on:
+      history-db:
+        condition: service_healthy
+      video-service:
+        condition: service_started
+    networks:
+      - microservices_network
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: notification_service
+    environment:
+      DB_HOST: notification-db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: notification_service_db
+      PORT: 8086
+    ports:
+      - "8086:8086"
+    depends_on:
+      notification-db:
+        condition: service_healthy
+    networks:
+      - microservices_network
+    restart: unless-stopped
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: api_gateway
+    environment:
+      VIDEO_SERVICE_URL: http://video-service:8081
+      USER_SERVICE_URL: http://user-service:8082
+      COMMENT_SERVICE_URL: http://comment-service:8083
+      HISTORY_SERVICE_URL: http://history-service:8084
+      NOTIFICATION_SERVICE_URL: http://notification-service:8086
       PORT: 8080
     ports:
       - "8080:8080"
     depends_on:
-      postgres:
-        condition: service_healthy
+      - video-service
+      - user-service
+      - comment-service
+      - history-service
+      - notification-service
     networks:
-      - youtube_network
+      - microservices_network
     restart: unless-stopped
 
+  admin-service:
+    build:
+      context: ./services/admin-service
+      dockerfile: Dockerfile
+    container_name: admin_service
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@admin-db:5432/admin_service_db
+      PORT: 8085
+      VIDEO_SERVICE_URL: http://video-service:8081
+      USER_SERVICE_URL: http://user-service:8082
+      COMMENT_SERVICE_URL: http://comment-service:8083
+      HISTORY_SERVICE_URL: http://history-service:8084
+    ports:
+      - "8085:8085"
+    depends_on:
+      admin-db:
+        condition: service_healthy
+    networks:
+      - microservices_network
+    restart: unless-stopped
+
+  # Frontend
   frontend:
     build:
       context: ./frontend
@@ -49,15 +267,19 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - backend
+      - api-gateway
     networks:
-      - youtube_network
+      - microservices_network
     restart: unless-stopped
 
 volumes:
-  postgres_data:
+  video_db_data:
+  user_db_data:
+  comment_db_data:
+  history_db_data:
+  admin_db_data:
+  notification_db_data:
 
 networks:
-  youtube_network:
+  microservices_network:
     driver: bridge
-

@@ -1,6 +1,16 @@
 # Environment Variables
 
-All services are configured via environment variables. In Docker Compose these are set in `docker-compose.microservices.yml`. For local dev, export them in your shell or use a `.env` file.
+All services are configured via environment variables. In Docker Compose these are set in `docker-compose.yml`, with sensitive values sourced from a root `.env` file. For local dev, export them in your shell or use a `.env` file.
+
+## Root `.env` (required for Docker Compose)
+
+Copy `.env.example` to `.env` and set a strong password:
+
+```env
+POSTGRES_PASSWORD=your_strong_password_here
+```
+
+This single variable is shared by all database and service containers.
 
 ## API Gateway (port 8080)
 
@@ -22,7 +32,7 @@ PORT=8081
 DB_HOST=video-db
 DB_PORT=5432
 DB_USER=postgres
-DB_PASSWORD=postgres
+DB_PASSWORD=$POSTGRES_PASSWORD
 DB_NAME=video_service_db
 ```
 
@@ -42,7 +52,7 @@ PORT=8082
 DB_HOST=user-db
 DB_PORT=5432
 DB_USER=postgres
-DB_PASSWORD=postgres
+DB_PASSWORD=$POSTGRES_PASSWORD
 DB_NAME=user_service_db
 ```
 
@@ -53,7 +63,7 @@ PORT=8083
 DB_HOST=comment-db
 DB_PORT=5432
 DB_USER=postgres
-DB_PASSWORD=postgres
+DB_PASSWORD=$POSTGRES_PASSWORD
 DB_NAME=comment_service_db
 ```
 
@@ -64,7 +74,7 @@ PORT=8084
 DB_HOST=history-db
 DB_PORT=5432
 DB_USER=postgres
-DB_PASSWORD=postgres
+DB_PASSWORD=$POSTGRES_PASSWORD
 DB_NAME=history_service_db
 VIDEO_SERVICE_URL=http://video-service:8081
 ```
@@ -76,7 +86,7 @@ PORT=8086
 DB_HOST=notification-db
 DB_PORT=5432
 DB_USER=postgres
-DB_PASSWORD=postgres
+DB_PASSWORD=$POSTGRES_PASSWORD
 DB_NAME=notification_service_db
 ```
 
@@ -84,7 +94,7 @@ DB_NAME=notification_service_db
 
 ```env
 PORT=8085
-DATABASE_URL=postgresql://postgres:postgres@admin-db:5432/admin_service_db
+DATABASE_URL=postgresql://postgres:$POSTGRES_PASSWORD@admin-db:5432/admin_service_db
 VIDEO_SERVICE_URL=http://video-service:8081
 USER_SERVICE_URL=http://user-service:8082
 COMMENT_SERVICE_URL=http://comment-service:8083
@@ -105,7 +115,7 @@ VITE_API_URL=http://localhost:8080
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
-DB_PASSWORD=postgres
+DB_PASSWORD=$POSTGRES_PASSWORD
 DB_NAME=youtube_clone
 PORT=8080
 ```
