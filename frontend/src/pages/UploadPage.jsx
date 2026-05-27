@@ -60,7 +60,7 @@ export default function UploadPage() {
         if (!res.ok) return
         const data = await res.json()
         setTranscodingStatus(data)
-        if (data.processing_status === 'ready' && intervalId) clearInterval(intervalId)
+        if ((data.processing_status === 'ready' || data.processing_status === 'failed') && intervalId) clearInterval(intervalId)
       } catch {
         // silent
       }
@@ -72,7 +72,7 @@ export default function UploadPage() {
   }, [phase, videoId, token])
 
   useEffect(() => {
-    if (phase !== 'processing' || transcodingStatus?.processing_status === 'ready') return
+    if (phase !== 'processing' || transcodingStatus?.processing_status === 'ready' || transcodingStatus?.processing_status === 'failed') return
 
     const onBeforeUnload = (event) => {
       event.preventDefault()
@@ -218,6 +218,7 @@ export default function UploadPage() {
   }
 
   const isReady = transcodingStatus?.processing_status === 'ready' || transcodingStatus?.overall_progress === 100
+  const isFailed = transcodingStatus?.processing_status === 'failed'
 
   const jobsByQuality = new Map((transcodingStatus?.jobs || []).map(job => [job.quality, job]))
 
@@ -417,7 +418,7 @@ export default function UploadPage() {
 
         {phase === 'processing' && (
           <div className="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-            {!isReady ? (
+            {!isReady && !isFailed ? (
               <>
                 <div className="flex justify-between text-sm dark:text-gray-300">
                   <span>Transcoding progress</span>
@@ -441,7 +442,7 @@ export default function UploadPage() {
                   })}
                 </div>
               </>
-            ) : (
+            ) : isReady ? (
               <div className="space-y-3">
                 <p className="text-green-700 dark:text-green-400 font-medium">Your video is ready!</p>
                 <button
@@ -452,6 +453,8 @@ export default function UploadPage() {
                   Go to Video
                 </button>
               </div>
+            ) : (
+              <p className="text-red-700 dark:text-red-400 font-medium">Video processing failed. You can still save metadata and retry upload later.</p>
             )}
           </div>
         )}
