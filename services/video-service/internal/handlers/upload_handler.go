@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -248,7 +249,10 @@ func (h *UploadHandler) GetTranscodingStatus(w http.ResponseWriter, r *http.Requ
 	}
 
 	if updatedStatus != processingStatus {
-		_, _ = h.db.Exec(`UPDATE videos SET processing_status = $1, updated_at = NOW() WHERE id = $2`, updatedStatus, videoID)
+		if err := h.promoteVideoStatus(r.Context(), videoID, processingStatus, updatedStatus); err != nil {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -258,6 +262,39 @@ func (h *UploadHandler) GetTranscodingStatus(w http.ResponseWriter, r *http.Requ
 		"jobs":              responseJobs,
 		"overall_progress":  overallProgress,
 	})
+}
+
+// promoteVideoStatus atomically transitions a video's processing_status from
+// expectedStatus to newStatus inside a transaction with a row-level lock,
+// preventing duplicate or conflicting promotions under concurrent requests.
+func (h *UploadHandler) promoteVideoStatus(ctx context.Context, videoID int, expectedStatus, newStatus string) error {
+	tx, err := h.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Lock the row and re-read the current status.
+	var current string
+	if err := tx.QueryRowContext(ctx,
+		`SELECT processing_status FROM videos WHERE id = $1 FOR UPDATE`,
+		videoID,
+	).Scan(&current); err != nil {
+		return err
+	}
+
+	// Only update when the status is still what we observed before acquiring the
+	// lock; this prevents two concurrent requests from both transitioning the row.
+	if current == expectedStatus {
+		if _, err := tx.ExecContext(ctx,
+			`UPDATE videos SET processing_status = $1, updated_at = NOW() WHERE id = $2`,
+			newStatus, videoID,
+		); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 type updateMetadataRequest struct {
@@ -305,6 +342,14 @@ func (h *UploadHandler) UpdateMetadata(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Title cannot be empty", http.StatusBadRequest)
 		return
 	}
+	if req.Title != nil && len(strings.TrimSpace(*req.Title)) > 100 {
+		http.Error(w, "Title must be 100 characters or fewer", http.StatusBadRequest)
+		return
+	}
+	if req.Description != nil && len(*req.Description) > 5000 {
+		http.Error(w, "Description must be 5000 characters or fewer", http.StatusBadRequest)
+		return
+	}
 	if req.Visibility != nil {
 		v := strings.ToLower(strings.TrimSpace(*req.Visibility))
 		if v != "public" && v != "unlisted" && v != "private" {
@@ -312,6 +357,14 @@ func (h *UploadHandler) UpdateMetadata(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		req.Visibility = &v
+	}
+	if req.Category != nil {
+		cat := strings.TrimSpace(*req.Category)
+		if cat != "" && !isAllowedCategory(cat) {
+			http.Error(w, "Invalid category", http.StatusBadRequest)
+			return
+		}
+		req.Category = &cat
 	}
 
 	setClauses := []string{}
@@ -330,7 +383,7 @@ func (h *UploadHandler) UpdateMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Category != nil {
 		setClauses = append(setClauses, fmt.Sprintf("category = $%d", argIndex))
-		args = append(args, strings.TrimSpace(*req.Category))
+		args = append(args, *req.Category)
 		argIndex++
 	}
 	if req.Visibility != nil {
@@ -415,4 +468,29 @@ func (h *UploadHandler) DeleteVideo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Video deleted successfully"})
+}
+
+// allowedCategories is the canonical set of video categories accepted by the API.
+// It must stay in sync with the CATEGORIES constant in the frontend UploadPage.
+var allowedCategories = map[string]struct{}{
+	"Gaming":             {},
+	"Music":              {},
+	"Sports":             {},
+	"Education":          {},
+	"Entertainment":      {},
+	"Science & Technology": {},
+	"News & Politics":    {},
+	"Travel & Events":    {},
+	"Howto & Style":      {},
+	"Comedy":             {},
+	"Film & Animation":   {},
+	"Autos & Vehicles":   {},
+	"People & Blogs":     {},
+	"Pets & Animals":     {},
+	"Other":              {},
+}
+
+func isAllowedCategory(cat string) bool {
+	_, ok := allowedCategories[cat]
+	return ok
 }
