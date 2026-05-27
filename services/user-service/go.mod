@@ -1,6 +1,6 @@
 module github.com/aung-arata/youtube-clone/services/user-service
 
-go 1.24.11
+go 1.26.3
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
