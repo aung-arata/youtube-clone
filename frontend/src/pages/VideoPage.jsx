@@ -285,7 +285,7 @@ function VideoPage() {
       <div className="flex-1">
         {/* Video Player */}
         <div className="relative bg-black rounded-lg overflow-hidden aspect-video mb-4">
-          {video.processing_status === 'ready' && video.url ? (
+          {video.processing_status === 'ready' ? (
             <video
               src={video.url.startsWith('/uploads') ? `${apiUrl}/api${video.url}` : video.url}
               controls
@@ -293,7 +293,7 @@ function VideoPage() {
               className="w-full h-full"
               poster={video.thumbnail ? `${apiUrl}/api${video.thumbnail}` : undefined}
             />
-          ) : video.processing_status !== 'ready' ? (
+          ) : (
             <div className="w-full h-full flex items-center justify-center">
               <div className="text-center text-white px-6">
                 <svg className="w-16 h-16 mx-auto mb-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -303,12 +303,6 @@ function VideoPage() {
                 <p className="text-sm opacity-60 mt-1">Playback will be available once processing is complete.</p>
               </div>
             </div>
-          ) : (
-            <img
-              src={video.thumbnail ? `${apiUrl}/api${video.thumbnail}` : `https://via.placeholder.com/854x480/333/FFFFFF?text=Video+Player`}
-              alt={video.title}
-              className="w-full h-full object-cover"
-            />
           )}
         </div>
 

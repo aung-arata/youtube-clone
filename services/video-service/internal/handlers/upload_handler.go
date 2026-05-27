@@ -297,6 +297,12 @@ func (h *UploadHandler) promoteVideoStatus(ctx context.Context, videoID int, exp
 	return tx.Commit()
 }
 
+// Validation limits – keep in sync with the frontend (frontend/src/pages/UploadPage.jsx).
+const (
+	maxTitleLength       = 100
+	maxDescriptionLength = 5000
+)
+
 type updateMetadataRequest struct {
 	Title       *string `json:"title"`
 	Description *string `json:"description"`
@@ -342,12 +348,12 @@ func (h *UploadHandler) UpdateMetadata(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Title cannot be empty", http.StatusBadRequest)
 		return
 	}
-	if req.Title != nil && len(strings.TrimSpace(*req.Title)) > 100 {
-		http.Error(w, "Title must be 100 characters or fewer", http.StatusBadRequest)
+	if req.Title != nil && len(strings.TrimSpace(*req.Title)) > maxTitleLength {
+		http.Error(w, fmt.Sprintf("Title must be %d characters or fewer", maxTitleLength), http.StatusBadRequest)
 		return
 	}
-	if req.Description != nil && len(*req.Description) > 5000 {
-		http.Error(w, "Description must be 5000 characters or fewer", http.StatusBadRequest)
+	if req.Description != nil && len(*req.Description) > maxDescriptionLength {
+		http.Error(w, fmt.Sprintf("Description must be %d characters or fewer", maxDescriptionLength), http.StatusBadRequest)
 		return
 	}
 	if req.Visibility != nil {
@@ -471,7 +477,7 @@ func (h *UploadHandler) DeleteVideo(w http.ResponseWriter, r *http.Request) {
 }
 
 // allowedCategories is the canonical set of video categories accepted by the API.
-// It must stay in sync with the CATEGORIES constant in the frontend UploadPage.
+// It must stay in sync with the CATEGORIES constant in frontend/src/pages/UploadPage.jsx.
 var allowedCategories = map[string]struct{}{
 	"Gaming":             {},
 	"Music":              {},
