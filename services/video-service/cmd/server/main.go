@@ -5,11 +5,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/aung-arata/youtube-clone/services/video-service/internal/database"
 	"github.com/aung-arata/youtube-clone/services/video-service/internal/handlers"
 	"github.com/aung-arata/youtube-clone/services/video-service/internal/middleware"
 	"github.com/aung-arata/youtube-clone/services/video-service/internal/storage"
+	"github.com/aung-arata/youtube-clone/services/video-service/internal/transcoding"
 	"github.com/gorilla/mux"
 )
 
@@ -26,6 +28,20 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to initialize file storage:", err)
 	}
+	uploadBaseDir := storage.UploadPath
+
+	transcodingOutputDir := os.Getenv("TRANSCODING_OUTPUT_DIR")
+	if transcodingOutputDir == "" {
+		transcodingOutputDir = "/tmp/transcoded"
+	}
+	maxConcurrent := 2
+	if workers := os.Getenv("TRANSCODING_MAX_CONCURRENT"); workers != "" {
+		if value, parseErr := strconv.Atoi(workers); parseErr == nil && value > 0 {
+			maxConcurrent = value
+		}
+	}
+	transcodingService := transcoding.NewTranscodingService(db, transcodingOutputDir, maxConcurrent)
+	defer transcodingService.Shutdown()
 
 	// Create router
 	r := mux.NewRouter()
@@ -34,10 +50,12 @@ func main() {
 	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))))
 
 	// Upload routes (protected)
-	uploadHandler := handlers.NewUploadHandler(db, fileStorage)
+	uploadHandler := handlers.NewUploadHandler(db, fileStorage, transcodingService, uploadBaseDir)
 	protectedUpload := r.PathPrefix("/upload").Subrouter()
 	protectedUpload.Use(middleware.AuthMiddleware)
 	protectedUpload.HandleFunc("/video", uploadHandler.UploadVideo).Methods("POST")
+	protectedUpload.HandleFunc("/video/{id}/status", uploadHandler.GetTranscodingStatus).Methods("GET")
+	protectedUpload.HandleFunc("/video/{id}/metadata", uploadHandler.UpdateMetadata).Methods("PATCH")
 	protectedUpload.HandleFunc("/video/delete", uploadHandler.DeleteVideo).Methods("DELETE")
 
 	// Video routes

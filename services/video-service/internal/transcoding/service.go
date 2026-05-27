@@ -174,6 +174,25 @@ func (s *TranscodingService) worker(id int) {
 	}
 }
 
+// ExtractThumbnail extracts a frame from the video at the given second offset
+// and saves it as a JPEG. Returns the output path or error.
+func (s *TranscodingService) ExtractThumbnail(sourcePath, outputDir string, videoID int, atSecond float64) (string, error) {
+	outPath := filepath.Join(outputDir, fmt.Sprintf("thumb_%d.jpg", videoID))
+	args := []string{
+		"-ss", fmt.Sprintf("%.2f", atSecond),
+		"-i", sourcePath,
+		"-frames:v", "1",
+		"-q:v", "2",
+		"-y",
+		outPath,
+	}
+	cmd := exec.Command(s.ffmpegPath, args...)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return "", fmt.Errorf("thumbnail extraction failed: %v\n%s", err, out)
+	}
+	return outPath, nil
+}
+
 // QueueTranscoding adds a video to the transcoding queue for specified qualities
 func (s *TranscodingService) QueueTranscoding(videoID int, sourcePath string, qualities []string) error {
 	for _, quality := range qualities {

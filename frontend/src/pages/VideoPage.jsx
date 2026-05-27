@@ -305,6 +305,12 @@ function VideoPage() {
         {/* Video Info */}
         <h1 className="text-xl font-bold dark:text-white mb-2">{video.title}</h1>
 
+        {video.processing_status && video.processing_status !== 'ready' && (
+          <div className="mb-4 p-3 rounded-lg border border-yellow-200 bg-yellow-50 text-yellow-800 dark:bg-yellow-900/20 dark:border-yellow-800 dark:text-yellow-300 text-sm">
+            This video is still being processed. Some quality options may not be available yet.
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
             {video.channel_avatar && !video.channel_avatar.startsWith('/uploads') ? (

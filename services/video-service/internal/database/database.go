@@ -75,6 +75,18 @@ func runMigrations(db *sql.DB) error {
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
 
+	DO $$ BEGIN
+	  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='videos' AND column_name='user_id') THEN
+	    ALTER TABLE videos ADD COLUMN user_id INTEGER;
+	  END IF;
+	  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='videos' AND column_name='visibility') THEN
+	    ALTER TABLE videos ADD COLUMN visibility VARCHAR(20) NOT NULL DEFAULT 'public';
+	  END IF;
+	  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='videos' AND column_name='processing_status') THEN
+	    ALTER TABLE videos ADD COLUMN processing_status VARCHAR(20) NOT NULL DEFAULT 'pending';
+	  END IF;
+	END $$;
+
 	-- Create indexes for search performance
 	CREATE INDEX IF NOT EXISTS idx_videos_title ON videos USING gin(to_tsvector('english', title));
 	CREATE INDEX IF NOT EXISTS idx_videos_description ON videos USING gin(to_tsvector('english', description));

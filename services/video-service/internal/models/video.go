@@ -4,12 +4,15 @@ import "time"
 
 type Video struct {
 	ID            int       `json:"id"`
+	UserID        *int      `json:"user_id,omitempty"`
 	Title         string    `json:"title"`
 	Description   string    `json:"description"`
 	URL           string    `json:"url"`
 	Thumbnail     string    `json:"thumbnail"`
 	ChannelName   string    `json:"channel_name"`
 	ChannelAvatar string    `json:"channel_avatar"`
+	Visibility    string    `json:"visibility"`
+	ProcessingStatus string `json:"processing_status"`
 	Views         int       `json:"views"`
 	Likes         int       `json:"likes"`
 	Dislikes      int       `json:"dislikes"`
