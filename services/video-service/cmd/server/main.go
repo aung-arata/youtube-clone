@@ -81,7 +81,7 @@ func main() {
 	r.HandleFunc("/playlists/{id}", playlistHandler.DeletePlaylist).Methods("DELETE")
 	r.HandleFunc("/playlists/{id}/videos", playlistHandler.AddVideoToPlaylist).Methods("POST")
 	r.HandleFunc("/playlists/{id}/videos/{videoId}", playlistHandler.RemoveVideoFromPlaylist).Methods("DELETE")
-	
+
 	// Health check
 	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

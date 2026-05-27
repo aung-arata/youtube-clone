@@ -14,13 +14,13 @@ import (
 
 // QualityPreset defines video quality presets
 type QualityPreset struct {
-	Name       string
-	Width      int
-	Height     int
-	Bitrate    int    // in kbps
-	AudioRate  int    // in kbps
-	CRF        int    // Constant Rate Factor (0-51, lower is better quality)
-	Preset     string // FFmpeg preset (ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow)
+	Name      string
+	Width     int
+	Height    int
+	Bitrate   int    // in kbps
+	AudioRate int    // in kbps
+	CRF       int    // Constant Rate Factor (0-51, lower is better quality)
+	Preset    string // FFmpeg preset (ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow)
 }
 
 // Predefined quality presets

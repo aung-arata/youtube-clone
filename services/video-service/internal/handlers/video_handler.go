@@ -28,11 +28,11 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 	category := r.URL.Query().Get("category")
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")
-	sortBy := r.URL.Query().Get("sort_by")      // views, likes, date, title
-	orderBy := r.URL.Query().Get("order")        // asc, desc
-	uploadedAfter := r.URL.Query().Get("uploaded_after")  // date filter
-	minDuration := r.URL.Query().Get("min_duration")      // minimum duration in seconds
-	maxDuration := r.URL.Query().Get("max_duration")      // maximum duration in seconds
+	sortBy := r.URL.Query().Get("sort_by")               // views, likes, date, title
+	orderBy := r.URL.Query().Get("order")                // asc, desc
+	uploadedAfter := r.URL.Query().Get("uploaded_after") // date filter
+	minDuration := r.URL.Query().Get("min_duration")     // minimum duration in seconds
+	maxDuration := r.URL.Query().Get("max_duration")     // maximum duration in seconds
 
 	// Default pagination values
 	page := 1
@@ -58,7 +58,7 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 		       channel_avatar, visibility, processing_status, views, likes, dislikes, category, duration, uploaded_at, created_at, updated_at
 		FROM videos
 	`
-	
+
 	var args []interface{}
 	var conditions []string
 	argIndex := 1
@@ -132,7 +132,7 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 		if orderBy == "asc" {
 			order = "ASC"
 		}
-		
+
 		switch sortBy {
 		case "views":
 			orderClause = "views " + order
@@ -595,15 +595,15 @@ func (h *VideoHandler) GetVideoAnalytics(w http.ResponseWriter, r *http.Request)
 	`
 
 	var analytics struct {
-		ID           int    `json:"id"`
-		Title        string `json:"title"`
-		Views        int    `json:"views"`
-		Likes        int    `json:"likes"`
-		Dislikes     int    `json:"dislikes"`
-		Category     string `json:"category"`
-		UploadedAt   string `json:"uploaded_at"`
-		LikeRatio    float64 `json:"like_ratio"`
-		Engagement   int    `json:"engagement"`
+		ID         int     `json:"id"`
+		Title      string  `json:"title"`
+		Views      int     `json:"views"`
+		Likes      int     `json:"likes"`
+		Dislikes   int     `json:"dislikes"`
+		Category   string  `json:"category"`
+		UploadedAt string  `json:"uploaded_at"`
+		LikeRatio  float64 `json:"like_ratio"`
+		Engagement int     `json:"engagement"`
 	}
 
 	err = h.db.QueryRow(query, id).Scan(&analytics.ID, &analytics.Title, &analytics.Views,
