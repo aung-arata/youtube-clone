@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   changes:
     name: Detect Changes
@@ -84,7 +87,7 @@ jobs:
       run: go build -v ./cmd/server/...
 
     - name: Upload coverage
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
         files: ./services/${{ matrix.service }}/coverage.out
         flags: ${{ matrix.service }}
@@ -139,6 +142,11 @@ jobs:
       uses: docker/setup-buildx-action@v3
 
     - name: Build all services
+      uses: docker/bake-action@v5
+      with:
+        files: docker-compose.yml
+        set: |
+          *.cache-from=type=gha
+          *.cache-to=type=gha,mode=max
       env:
         POSTGRES_PASSWORD: ci_password
-      run: docker compose build
