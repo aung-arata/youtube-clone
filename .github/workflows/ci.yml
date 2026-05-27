@@ -10,93 +10,111 @@ permissions:
   contents: read
 
 jobs:
-  services-test:
-    name: ${{ matrix.service }} Tests
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      services: ${{ steps.filter.outputs.changes }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          api-gateway:
+            - 'services/api-gateway/**'
+          user-service:
+            - 'services/user-service/**'
+          video-service:
+            - 'services/video-service/**'
+          comment-service:
+            - 'services/comment-service/**'
+          history-service:
+            - 'services/history-service/**'
+          notification-service:
+            - 'services/notification-service/**'
+          frontend:
+            - 'frontend/**'
+
+  services-ci:
+    name: ${{ matrix.service }}
+    needs: changes
+    if: ${{ needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
-        service: [api-gateway, user-service, video-service, comment-service, history-service, notification-service]
-    
+        service: ${{ fromJson(needs.changes.outputs.services) }}
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
         go-version: '1.26.3'
-    
-    - name: Cache Go modules
+        cache: false
+
+    - name: Cache Go modules and build cache
       uses: actions/cache@v4
       with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ matrix.service }}-${{ hashFiles('services/**/go.sum') }}
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-go-${{ matrix.service }}-${{ hashFiles(format('services/{0}/go.sum', matrix.service)) }}
         restore-keys: |
           ${{ runner.os }}-go-${{ matrix.service }}-
-    
-    - name: Install dependencies
+
+    - name: Download dependencies
       working-directory: ./services/${{ matrix.service }}
       run: go mod download
-    
-    - name: Run tests
+
+    - name: Test
       working-directory: ./services/${{ matrix.service }}
       run: go test -v -race -coverprofile=coverage.out ./... || echo "No tests found"
-    
+
+    - name: Build
+      working-directory: ./services/${{ matrix.service }}
+      run: go build -v ./cmd/server/...
+
     - name: Upload coverage
       uses: codecov/codecov-action@v4
       with:
         files: ./services/${{ matrix.service }}/coverage.out
         flags: ${{ matrix.service }}
 
-  services-build:
-    name: ${{ matrix.service }} Build
+  frontend-ci:
+    name: Frontend
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
-    needs: services-test
     permissions:
       contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        service: [api-gateway, user-service, video-service, comment-service, history-service, notification-service]
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.26.3'
-    
-    - name: Build
-      working-directory: ./services/${{ matrix.service }}
-      run: go build -v ./cmd/server/...
 
-  frontend-test:
-    name: Frontend Tests
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
-    
+
     - name: Install dependencies
       working-directory: ./frontend
       run: npm ci
-    
+
     - name: Run lint
       working-directory: ./frontend
       run: npm run lint || echo "No lint script configured"
-    
+
     - name: Build
       working-directory: ./frontend
       run: npm run build
@@ -104,17 +122,22 @@ jobs:
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
-    needs: [services-build, frontend-test]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [services-ci, frontend-ci]
+    if: |
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
     permissions:
       contents: read
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-    
+
     - name: Build all services
       env:
         POSTGRES_PASSWORD: ci_password
