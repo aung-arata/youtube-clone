@@ -28,11 +28,11 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 	category := r.URL.Query().Get("category")
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")
-	sortBy := r.URL.Query().Get("sort_by")      // views, likes, date, title
-	orderBy := r.URL.Query().Get("order")        // asc, desc
-	uploadedAfter := r.URL.Query().Get("uploaded_after")  // date filter
-	minDuration := r.URL.Query().Get("min_duration")      // minimum duration in seconds
-	maxDuration := r.URL.Query().Get("max_duration")      // maximum duration in seconds
+	sortBy := r.URL.Query().Get("sort_by")               // views, likes, date, title
+	orderBy := r.URL.Query().Get("order")                // asc, desc
+	uploadedAfter := r.URL.Query().Get("uploaded_after") // date filter
+	minDuration := r.URL.Query().Get("min_duration")     // minimum duration in seconds
+	maxDuration := r.URL.Query().Get("max_duration")     // maximum duration in seconds
 
 	// Default pagination values
 	page := 1
@@ -54,14 +54,17 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 
 	// Build query with optional search and category filter
 	query := `
-		SELECT id, title, description, url, thumbnail, channel_name, 
-		       channel_avatar, views, likes, dislikes, category, duration, uploaded_at, created_at, updated_at
+		SELECT id, user_id, title, description, url, thumbnail, channel_name,
+		       channel_avatar, visibility, processing_status, views, likes, dislikes, category, duration, uploaded_at, created_at, updated_at
 		FROM videos
 	`
-	
+
 	var args []interface{}
 	var conditions []string
 	argIndex := 1
+
+	conditions = append(conditions, "visibility = 'public'")
+	conditions = append(conditions, "processing_status = 'ready'")
 
 	if searchQuery != "" {
 		conditions = append(conditions, fmt.Sprintf("(title ILIKE $%d OR description ILIKE $%d OR channel_name ILIKE $%d)", argIndex, argIndex, argIndex))
@@ -129,7 +132,7 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 		if orderBy == "asc" {
 			order = "ASC"
 		}
-		
+
 		switch sortBy {
 		case "views":
 			orderClause = "views " + order
@@ -157,12 +160,17 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 	var videos []models.Video
 	for rows.Next() {
 		var v models.Video
-		err := rows.Scan(&v.ID, &v.Title, &v.Description, &v.URL, &v.Thumbnail,
-			&v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes, &v.Category, &v.Duration,
+		var userID sql.NullInt64
+		err := rows.Scan(&v.ID, &userID, &v.Title, &v.Description, &v.URL, &v.Thumbnail,
+			&v.ChannelName, &v.ChannelAvatar, &v.Visibility, &v.ProcessingStatus, &v.Views, &v.Likes, &v.Dislikes, &v.Category, &v.Duration,
 			&v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+		if userID.Valid {
+			userIDInt := int(userID.Int64)
+			v.UserID = &userIDInt
 		}
 		videos = append(videos, v)
 	}
@@ -185,16 +193,21 @@ func (h *VideoHandler) GetVideo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `
-		SELECT id, title, description, url, thumbnail, channel_name, 
-		       channel_avatar, views, likes, dislikes, category, duration, uploaded_at, created_at, updated_at
+		SELECT id, user_id, title, description, url, thumbnail, channel_name,
+		       channel_avatar, visibility, processing_status, views, likes, dislikes, category, duration, uploaded_at, created_at, updated_at
 		FROM videos
 		WHERE id = $1
 	`
 
 	var v models.Video
-	err = h.db.QueryRow(query, id).Scan(&v.ID, &v.Title, &v.Description, &v.URL,
-		&v.Thumbnail, &v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes, &v.Category, &v.Duration,
+	var userID sql.NullInt64
+	err = h.db.QueryRow(query, id).Scan(&v.ID, &userID, &v.Title, &v.Description, &v.URL,
+		&v.Thumbnail, &v.ChannelName, &v.ChannelAvatar, &v.Visibility, &v.ProcessingStatus, &v.Views, &v.Likes, &v.Dislikes, &v.Category, &v.Duration,
 		&v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
+	if userID.Valid {
+		userIDInt := int(userID.Int64)
+		v.UserID = &userIDInt
+	}
 
 	if err == sql.ErrNoRows {
 		http.Error(w, "Video not found", http.StatusNotFound)
@@ -344,7 +357,7 @@ func (h *VideoHandler) GetCategories(w http.ResponseWriter, r *http.Request) {
 	query := `
 		SELECT DISTINCT category 
 		FROM videos 
-		WHERE category IS NOT NULL AND category != ''
+		WHERE category IS NOT NULL AND category != '' AND visibility = 'public' AND processing_status = 'ready'
 		ORDER BY category
 	`
 
@@ -405,10 +418,10 @@ func (h *VideoHandler) GetRecommendations(w http.ResponseWriter, r *http.Request
 
 	// Get recommended videos from the same category, sorted by views
 	query := `
-		SELECT id, title, description, url, thumbnail, channel_name, channel_avatar,
-		       views, likes, dislikes, category, duration, uploaded_at, created_at, updated_at
+		SELECT id, user_id, title, description, url, thumbnail, channel_name, channel_avatar,
+		       visibility, processing_status, views, likes, dislikes, category, duration, uploaded_at, created_at, updated_at
 		FROM videos
-		WHERE category = $1 AND id != $2
+		WHERE category = $1 AND id != $2 AND visibility = 'public' AND processing_status = 'ready'
 		ORDER BY views DESC, uploaded_at DESC
 		LIMIT $3
 	`
@@ -423,12 +436,17 @@ func (h *VideoHandler) GetRecommendations(w http.ResponseWriter, r *http.Request
 	var videos []models.Video
 	for rows.Next() {
 		var v models.Video
-		err := rows.Scan(&v.ID, &v.Title, &v.Description, &v.URL, &v.Thumbnail,
-			&v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes,
+		var userID sql.NullInt64
+		err := rows.Scan(&v.ID, &userID, &v.Title, &v.Description, &v.URL, &v.Thumbnail,
+			&v.ChannelName, &v.ChannelAvatar, &v.Visibility, &v.ProcessingStatus, &v.Views, &v.Likes, &v.Dislikes,
 			&v.Category, &v.Duration, &v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+		if userID.Valid {
+			userIDInt := int(userID.Int64)
+			v.UserID = &userIDInt
 		}
 		videos = append(videos, v)
 	}
@@ -458,10 +476,10 @@ func (h *VideoHandler) GetTrendingVideos(w http.ResponseWriter, r *http.Request)
 
 	// Get videos uploaded or viewed recently, sorted by views
 	query := `
-		SELECT id, title, description, url, thumbnail, channel_name, 
-		       channel_avatar, views, likes, dislikes, category, duration, uploaded_at, created_at, updated_at
+		SELECT id, user_id, title, description, url, thumbnail, channel_name,
+		       channel_avatar, visibility, processing_status, views, likes, dislikes, category, duration, uploaded_at, created_at, updated_at
 		FROM videos
-		WHERE uploaded_at >= NOW() - INTERVAL '7 days'
+		WHERE uploaded_at >= NOW() - INTERVAL '7 days' AND visibility = 'public' AND processing_status = 'ready'
 		ORDER BY views DESC, likes DESC
 		LIMIT $1
 	`
@@ -476,12 +494,17 @@ func (h *VideoHandler) GetTrendingVideos(w http.ResponseWriter, r *http.Request)
 	var videos []models.Video
 	for rows.Next() {
 		var v models.Video
-		err := rows.Scan(&v.ID, &v.Title, &v.Description, &v.URL, &v.Thumbnail,
-			&v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes,
+		var userID sql.NullInt64
+		err := rows.Scan(&v.ID, &userID, &v.Title, &v.Description, &v.URL, &v.Thumbnail,
+			&v.ChannelName, &v.ChannelAvatar, &v.Visibility, &v.ProcessingStatus, &v.Views, &v.Likes, &v.Dislikes,
 			&v.Category, &v.Duration, &v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+		if userID.Valid {
+			userIDInt := int(userID.Int64)
+			v.UserID = &userIDInt
 		}
 		videos = append(videos, v)
 	}
@@ -510,9 +533,10 @@ func (h *VideoHandler) GetPopularVideos(w http.ResponseWriter, r *http.Request) 
 	}
 
 	query := `
-		SELECT id, title, description, url, thumbnail, channel_name, 
-		       channel_avatar, views, likes, dislikes, category, duration, uploaded_at, created_at, updated_at
+		SELECT id, user_id, title, description, url, thumbnail, channel_name,
+		       channel_avatar, visibility, processing_status, views, likes, dislikes, category, duration, uploaded_at, created_at, updated_at
 		FROM videos
+		WHERE visibility = 'public' AND processing_status = 'ready'
 		ORDER BY views DESC, likes DESC
 		LIMIT $1
 	`
@@ -527,12 +551,17 @@ func (h *VideoHandler) GetPopularVideos(w http.ResponseWriter, r *http.Request) 
 	var videos []models.Video
 	for rows.Next() {
 		var v models.Video
-		err := rows.Scan(&v.ID, &v.Title, &v.Description, &v.URL, &v.Thumbnail,
-			&v.ChannelName, &v.ChannelAvatar, &v.Views, &v.Likes, &v.Dislikes,
+		var userID sql.NullInt64
+		err := rows.Scan(&v.ID, &userID, &v.Title, &v.Description, &v.URL, &v.Thumbnail,
+			&v.ChannelName, &v.ChannelAvatar, &v.Visibility, &v.ProcessingStatus, &v.Views, &v.Likes, &v.Dislikes,
 			&v.Category, &v.Duration, &v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+		if userID.Valid {
+			userIDInt := int(userID.Int64)
+			v.UserID = &userIDInt
 		}
 		videos = append(videos, v)
 	}
@@ -566,15 +595,15 @@ func (h *VideoHandler) GetVideoAnalytics(w http.ResponseWriter, r *http.Request)
 	`
 
 	var analytics struct {
-		ID           int    `json:"id"`
-		Title        string `json:"title"`
-		Views        int    `json:"views"`
-		Likes        int    `json:"likes"`
-		Dislikes     int    `json:"dislikes"`
-		Category     string `json:"category"`
-		UploadedAt   string `json:"uploaded_at"`
-		LikeRatio    float64 `json:"like_ratio"`
-		Engagement   int    `json:"engagement"`
+		ID         int     `json:"id"`
+		Title      string  `json:"title"`
+		Views      int     `json:"views"`
+		Likes      int     `json:"likes"`
+		Dislikes   int     `json:"dislikes"`
+		Category   string  `json:"category"`
+		UploadedAt string  `json:"uploaded_at"`
+		LikeRatio  float64 `json:"like_ratio"`
+		Engagement int     `json:"engagement"`
 	}
 
 	err = h.db.QueryRow(query, id).Scan(&analytics.ID, &analytics.Title, &analytics.Views,
@@ -597,4 +626,3 @@ func (h *VideoHandler) GetVideoAnalytics(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(analytics)
 }
-

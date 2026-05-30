@@ -14,13 +14,13 @@ import (
 
 // QualityPreset defines video quality presets
 type QualityPreset struct {
-	Name       string
-	Width      int
-	Height     int
-	Bitrate    int    // in kbps
-	AudioRate  int    // in kbps
-	CRF        int    // Constant Rate Factor (0-51, lower is better quality)
-	Preset     string // FFmpeg preset (ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow)
+	Name      string
+	Width     int
+	Height    int
+	Bitrate   int    // in kbps
+	AudioRate int    // in kbps
+	CRF       int    // Constant Rate Factor (0-51, lower is better quality)
+	Preset    string // FFmpeg preset (ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow)
 }
 
 // Predefined quality presets
@@ -172,6 +172,25 @@ func (s *TranscodingService) worker(id int) {
 			return
 		}
 	}
+}
+
+// ExtractThumbnail extracts a frame from the video at the given second offset
+// and saves it as a JPEG. Returns the output path or error.
+func (s *TranscodingService) ExtractThumbnail(sourcePath, outputDir string, videoID int, atSecond float64) (string, error) {
+	outPath := filepath.Join(outputDir, fmt.Sprintf("thumb_%d.jpg", videoID))
+	args := []string{
+		"-ss", fmt.Sprintf("%.2f", atSecond),
+		"-i", sourcePath,
+		"-frames:v", "1",
+		"-q:v", "2",
+		"-y",
+		outPath,
+	}
+	cmd := exec.Command(s.ffmpegPath, args...)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return "", fmt.Errorf("thumbnail extraction failed: %v\n%s", err, out)
+	}
+	return outPath, nil
 }
 
 // QueueTranscoding adds a video to the transcoding queue for specified qualities

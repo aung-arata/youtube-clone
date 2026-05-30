@@ -35,8 +35,8 @@ func InitDB() (*sql.DB, error) {
 	}
 
 	// Configure connection pool
-	db.SetMaxOpenConns(25)              // Maximum number of open connections
-	db.SetMaxIdleConns(5)               // Maximum number of idle connections
+	db.SetMaxOpenConns(25)                 // Maximum number of open connections
+	db.SetMaxIdleConns(5)                  // Maximum number of idle connections
 	db.SetConnMaxLifetime(5 * time.Minute) // Maximum lifetime of a connection (5 minutes)
 
 	// Run migrations
@@ -74,6 +74,18 @@ func runMigrations(db *sql.DB) error {
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
+
+	DO $$ BEGIN
+	  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='videos' AND column_name='user_id') THEN
+	    ALTER TABLE videos ADD COLUMN user_id INTEGER;
+	  END IF;
+	  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='videos' AND column_name='visibility') THEN
+	    ALTER TABLE videos ADD COLUMN visibility VARCHAR(20) NOT NULL DEFAULT 'public';
+	  END IF;
+	  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='videos' AND column_name='processing_status') THEN
+	    ALTER TABLE videos ADD COLUMN processing_status VARCHAR(20) NOT NULL DEFAULT 'pending';
+	  END IF;
+	END $$;
 
 	-- Create indexes for search performance
 	CREATE INDEX IF NOT EXISTS idx_videos_title ON videos USING gin(to_tsvector('english', title));
