@@ -217,7 +217,7 @@ export default function UploadPage() {
     navigate('/')
   }
 
-  const isReady = transcodingStatus?.processing_status === 'ready'
+  const isReady = transcodingStatus?.processing_status === 'ready' || transcodingStatus?.overall_progress === 100
   const isFailed = transcodingStatus?.processing_status === 'failed'
 
   const jobsByQuality = new Map((transcodingStatus?.jobs || []).map(job => [job.quality, job]))

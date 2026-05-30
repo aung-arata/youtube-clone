@@ -1,8 +1,9 @@
-.PHONY: help frontend-install frontend-dev frontend-build gateway-run db-up db-down clean setup docker-up docker-down docker-logs
+.PHONY: help frontend-install frontend-dev frontend-build gateway-run db-up db-down clean setup docker-up docker-down docker-logs test
 
 help:
 	@echo "Available commands:"
 	@echo "  make setup             - Initial project setup"
+	@echo "  make test              - Run all Go tests across services"
 	@echo "  make frontend-install  - Install frontend dependencies"
 	@echo "  make frontend-dev      - Start frontend development server"
 	@echo "  make frontend-build    - Build frontend for production"
@@ -13,6 +14,12 @@ help:
 	@echo "  make docker-down       - Stop all Docker services"
 	@echo "  make docker-logs       - View Docker logs"
 	@echo "  make clean             - Clean build artifacts"
+
+test:
+	@for svc in api-gateway comment-service history-service notification-service user-service video-service; do \
+		echo "--- $$svc ---"; \
+		(cd services/$$svc && go test ./...); \
+	done
 
 setup:
 	@echo "Setting up project..."
