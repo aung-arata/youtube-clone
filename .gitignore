@@ -14,6 +14,7 @@ build/
 /backend/server
 /backend/main
 /services/*/main
+/services/*/server
 /server
 
 # Database
