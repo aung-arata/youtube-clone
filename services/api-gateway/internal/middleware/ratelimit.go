@@ -16,11 +16,12 @@ var (
 	mu       sync.Mutex
 )
 
+func init() {
+	go cleanupVisitors()
+}
+
 // RateLimitMiddleware limits requests per IP
 func RateLimitMiddleware(requestsPerMinute int) func(http.Handler) http.Handler {
-	// Clean up old visitors periodically
-	go cleanupVisitors()
-
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ip := r.RemoteAddr

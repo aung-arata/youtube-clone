@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -122,18 +123,19 @@ type VideoQuality struct {
 
 // TranscodingService handles video transcoding operations
 type TranscodingService struct {
-	db            *sql.DB
-	outputDir     string
-	ffmpegPath    string
-	maxConcurrent int
-	jobQueue      chan *TranscodingJob
-	wg            sync.WaitGroup
-	ctx           context.Context
-	cancel        context.CancelFunc
+	db              *sql.DB
+	outputDir       string
+	allowedInputDir string
+	ffmpegPath      string
+	maxConcurrent   int
+	jobQueue        chan *TranscodingJob
+	wg              sync.WaitGroup
+	ctx             context.Context
+	cancel          context.CancelFunc
 }
 
 // NewTranscodingService creates a new transcoding service
-func NewTranscodingService(db *sql.DB, outputDir string, maxConcurrent int) *TranscodingService {
+func NewTranscodingService(db *sql.DB, outputDir string, maxConcurrent int, allowedInputDir string) *TranscodingService {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// Find FFmpeg path
@@ -143,17 +145,19 @@ func NewTranscodingService(db *sql.DB, outputDir string, maxConcurrent int) *Tra
 	}
 
 	service := &TranscodingService{
-		db:            db,
-		outputDir:     outputDir,
-		ffmpegPath:    ffmpegPath,
-		maxConcurrent: maxConcurrent,
-		jobQueue:      make(chan *TranscodingJob, 100),
-		ctx:           ctx,
-		cancel:        cancel,
+		db:              db,
+		outputDir:       outputDir,
+		allowedInputDir: filepath.Clean(allowedInputDir),
+		ffmpegPath:      ffmpegPath,
+		maxConcurrent:   maxConcurrent,
+		jobQueue:        make(chan *TranscodingJob, 100),
+		ctx:             ctx,
+		cancel:          cancel,
 	}
 
 	// Start worker goroutines
 	for i := 0; i < maxConcurrent; i++ {
+		service.wg.Add(1)
 		go service.worker(i)
 	}
 
@@ -162,6 +166,7 @@ func NewTranscodingService(db *sql.DB, outputDir string, maxConcurrent int) *Tra
 
 // worker processes transcoding jobs from the queue
 func (s *TranscodingService) worker(id int) {
+	defer s.wg.Done()
 	for {
 		select {
 		case job := <-s.jobQueue:
@@ -195,6 +200,13 @@ func (s *TranscodingService) ExtractThumbnail(sourcePath, outputDir string, vide
 
 // QueueTranscoding adds a video to the transcoding queue for specified qualities
 func (s *TranscodingService) QueueTranscoding(videoID int, sourcePath string, qualities []string) error {
+	// Validate source path to prevent path traversal
+	cleaned := filepath.Clean(sourcePath)
+	if !strings.HasPrefix(cleaned, s.allowedInputDir) {
+		return fmt.Errorf("invalid source path: outside of allowed upload directory")
+	}
+	sourcePath = cleaned
+
 	for _, quality := range qualities {
 		preset, ok := QualityPresets[quality]
 		if !ok {

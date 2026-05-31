@@ -206,7 +206,10 @@ func (c *Client) ReadPump() {
 				// Respond with pong
 				pong := Message{Type: "pong", Payload: nil}
 				if data, err := json.Marshal(pong); err == nil {
-					c.Send <- data
+					select {
+					case c.Send <- data:
+					default:
+					}
 				}
 			}
 		}
@@ -240,14 +243,17 @@ func (c *Client) WritePump() {
 			// Add queued messages to the current WebSocket message
 			n := len(c.Send)
 			for i := 0; i < n; i++ {
+				msg, ok := <-c.Send
+				if !ok {
+					break
+				}
 				w.Write([]byte{'\n'})
-				w.Write(<-c.Send)
+				w.Write(msg)
 			}
 
 			if err := w.Close(); err != nil {
 				return
 			}
-
 		case <-ticker.C:
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {

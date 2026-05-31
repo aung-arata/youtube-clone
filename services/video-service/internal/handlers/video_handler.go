@@ -67,11 +67,11 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 	conditions = append(conditions, "processing_status = 'ready'")
 
 	if searchQuery != "" {
-		conditions = append(conditions, fmt.Sprintf("(title ILIKE $%d OR description ILIKE $%d OR channel_name ILIKE $%d)", argIndex, argIndex, argIndex))
-		args = append(args, "%"+searchQuery+"%")
-		argIndex++
-	}
+		conditions = append(conditions, fmt.Sprintf("(title ILIKE $%d OR description ILIKE $%d OR channel_name ILIKE $%d)", argIndex, argIndex+1, argIndex+2))
+		args = append(args, "%"+searchQuery+"%", "%"+searchQuery+"%", "%"+searchQuery+"%")
+		argIndex += 3
 
+	}
 	if category != "" {
 		conditions = append(conditions, fmt.Sprintf("category = $%d", argIndex))
 		args = append(args, category)

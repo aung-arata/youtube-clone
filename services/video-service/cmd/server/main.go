@@ -40,7 +40,7 @@ func main() {
 			maxConcurrent = value
 		}
 	}
-	transcodingService := transcoding.NewTranscodingService(db, transcodingOutputDir, maxConcurrent)
+	transcodingService := transcoding.NewTranscodingService(db, transcodingOutputDir, maxConcurrent, uploadBaseDir)
 	defer transcodingService.Shutdown()
 
 	// Create router
