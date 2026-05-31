@@ -5,6 +5,19 @@ import (
 	"time"
 )
 
+// waitForCondition polls fn up to deadline, sleeping 1ms between attempts.
+func waitForCondition(t *testing.T, deadline time.Duration, fn func() bool) bool {
+	t.Helper()
+	end := time.Now().Add(deadline)
+	for time.Now().Before(end) {
+		if fn() {
+			return true
+		}
+		time.Sleep(time.Millisecond)
+	}
+	return false
+}
+
 func TestNewHub(t *testing.T) {
 	hub := NewHub()
 	if hub == nil {
@@ -35,39 +48,36 @@ func TestHub_RegisterAndUnregister(t *testing.T) {
 		ClientID: "test-client-1",
 	}
 
-	// Register client and wait for confirmation via a sync message on broadcast
 	hub.register <- client
 
-	// Poll until the hub has processed the registration
-	deadline := time.Now().Add(2 * time.Second)
-	for time.Now().Before(deadline) {
+	if !waitForCondition(t, 2*time.Second, func() bool {
 		hub.mu.RLock()
-		_, ok := hub.clients[client.UserID]
-		hub.mu.RUnlock()
-		if ok {
-			break
-		}
-		time.Sleep(time.Millisecond)
+		defer hub.mu.RUnlock()
+		return hub.clients[client.UserID] != nil
+	}) {
+		t.Fatal("timed out waiting for client to be registered")
 	}
 
 	hub.mu.RLock()
-	clients, ok := hub.clients[client.UserID]
+	clients := hub.clients[client.UserID]
 	hub.mu.RUnlock()
-	if !ok {
-		t.Fatal("expected client to be registered")
-	}
 	if !clients[client] {
 		t.Error("expected client to be in the user's client set")
 	}
 
-	// Unregister client; hub closes client.Send when done
+	// Unregister; hub closes client.Send as its acknowledgement
 	hub.unregister <- client
 
-	// Wait for Send channel to be closed — that's the hub's signal that it processed unregister
 	select {
 	case _, open := <-client.Send:
+		// channel closed (open==false) means hub processed the unregister
 		if open {
-			// drained a message; channel isn't closed yet — keep waiting
+			// unexpected message; drain and wait for close
+			select {
+			case <-client.Send:
+			case <-time.After(2 * time.Second):
+				t.Fatal("timed out waiting for Send channel to close")
+			}
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("timed out waiting for hub to unregister client")
@@ -77,7 +87,7 @@ func TestHub_RegisterAndUnregister(t *testing.T) {
 	_, still := hub.clients[client.UserID]
 	hub.mu.RUnlock()
 	if still {
-		t.Error("expected client to be unregistered")
+		t.Error("expected client to be removed from hub after unregister")
 	}
 }
 
@@ -94,23 +104,24 @@ func TestHub_BroadcastToRegisteredUser(t *testing.T) {
 
 	hub.register <- client
 
-	// Wait for registration
-	for i := 0; i < 1000; i++ {
+	if !waitForCondition(t, 2*time.Second, func() bool {
 		hub.mu.RLock()
-		_, ok := hub.clients[client.UserID]
-		hub.mu.RUnlock()
-		if ok {
-			break
-		}
+		defer hub.mu.RUnlock()
+		return hub.clients[client.UserID] != nil
+	}) {
+		t.Fatal("timed out waiting for client to be registered")
 	}
 
 	msg := []byte(`{"type":"notification","payload":"hello"}`)
 	hub.broadcast <- &BroadcastMessage{UserID: 2, Message: msg}
 
-	// Read message from client's send channel
-	received := <-client.Send
-	if string(received) != string(msg) {
-		t.Errorf("received %q, want %q", received, msg)
+	select {
+	case received := <-client.Send:
+		if string(received) != string(msg) {
+			t.Errorf("received %q, want %q", received, msg)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting to receive broadcast message")
 	}
 }
 
