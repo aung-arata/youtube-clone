@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -82,7 +83,7 @@ func (h *UploadHandler) UploadVideo(w http.ResponseWriter, r *http.Request) {
 	defer videoFile.Close()
 
 	var videoID int
-	if err := h.db.QueryRow(`SELECT nextval(pg_get_serial_sequence('videos', 'id'))`).Scan(&videoID); err != nil {
+	if err := h.db.QueryRowContext(r.Context(), `SELECT nextval(pg_get_serial_sequence('videos', 'id'))`).Scan(&videoID); err != nil {
 		http.Error(w, "Error reserving video ID", http.StatusInternalServerError)
 		return
 	}
@@ -141,7 +142,7 @@ RETURNING id, user_id, title, description, url, thumbnail, channel_name, channel
 
 	var video models.Video
 	var userIDValue sql.NullInt64
-	err = h.db.QueryRow(query, videoID, userID, title, description, videoURL, thumbnailURL, channelName, channelAvatar, category, duration, visibility).Scan(
+	err = h.db.QueryRowContext(r.Context(), query, videoID, userID, title, description, videoURL, thumbnailURL, channelName, channelAvatar, category, duration, visibility).Scan(
 		&video.ID, &userIDValue, &video.Title, &video.Description, &video.URL, &video.Thumbnail,
 		&video.ChannelName, &video.ChannelAvatar, &video.Visibility, &video.ProcessingStatus, &video.Views, &video.Likes, &video.Dislikes,
 		&video.Category, &video.Duration, &video.UploadedAt, &video.CreatedAt, &video.UpdatedAt,
@@ -189,7 +190,7 @@ func (h *UploadHandler) GetTranscodingStatus(w http.ResponseWriter, r *http.Requ
 	}
 
 	var processingStatus string
-	if err := h.db.QueryRow(`SELECT processing_status FROM videos WHERE id = $1`, videoID).Scan(&processingStatus); err != nil {
+	if err := h.db.QueryRowContext(r.Context(), `SELECT processing_status FROM videos WHERE id = $1`, videoID).Scan(&processingStatus); err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "Video not found", http.StatusNotFound)
 			return
@@ -325,7 +326,7 @@ func (h *UploadHandler) UpdateMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var ownerID sql.NullInt64
-	if err := h.db.QueryRow(`SELECT user_id FROM videos WHERE id = $1`, videoID).Scan(&ownerID); err != nil {
+	if err := h.db.QueryRowContext(r.Context(), `SELECT user_id FROM videos WHERE id = $1`, videoID).Scan(&ownerID); err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "Video not found", http.StatusNotFound)
 			return
@@ -417,7 +418,7 @@ func (h *UploadHandler) UpdateMetadata(w http.ResponseWriter, r *http.Request) {
 SELECT id, user_id, title, description, url, thumbnail, channel_name, channel_avatar, visibility, processing_status, views, likes, dislikes, category, duration, uploaded_at, created_at, updated_at
 FROM videos WHERE id = $1
 `
-	if err := h.db.QueryRow(getQuery, videoID).Scan(
+	if err := h.db.QueryRowContext(r.Context(), getQuery, videoID).Scan(
 		&video.ID, &userIDValue, &video.Title, &video.Description, &video.URL, &video.Thumbnail,
 		&video.ChannelName, &video.ChannelAvatar, &video.Visibility, &video.ProcessingStatus, &video.Views, &video.Likes, &video.Dislikes,
 		&video.Category, &video.Duration, &video.UploadedAt, &video.CreatedAt, &video.UpdatedAt,
@@ -436,26 +437,32 @@ FROM videos WHERE id = $1
 
 // DeleteVideo handles video deletion including file cleanup
 func (h *UploadHandler) DeleteVideo(w http.ResponseWriter, r *http.Request) {
-	_, ok := r.Context().Value(middleware.UserIDKey).(int)
+	userID, ok := r.Context().Value(middleware.UserIDKey).(int)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	videoID := r.URL.Query().Get("id")
+	videoID := mux.Vars(r)["id"]
 	if videoID == "" {
 		http.Error(w, "Video ID is required", http.StatusBadRequest)
 		return
 	}
 
-	query := `SELECT url, thumbnail FROM videos WHERE id = $1`
+	// Fetch video and verify ownership
+	query := `SELECT user_id, url, thumbnail FROM videos WHERE id = $1`
+	var ownerID sql.NullInt64
 	var videoURL, thumbnailURL string
-	err := h.db.QueryRow(query, videoID).Scan(&videoURL, &thumbnailURL)
+	err := h.db.QueryRowContext(r.Context(), query, videoID).Scan(&ownerID, &videoURL, &thumbnailURL)
 	if err == sql.ErrNoRows {
 		http.Error(w, "Video not found", http.StatusNotFound)
 		return
 	} else if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+	if !ownerID.Valid || int(ownerID.Int64) != userID {
+		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -466,9 +473,13 @@ func (h *UploadHandler) DeleteVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.storage.DeleteFile(videoURL)
+	if err := h.storage.DeleteFile(videoURL); err != nil {
+		log.Printf("cleanup: failed to delete video file %s: %v", videoURL, err)
+	}
 	if thumbnailURL != "" {
-		h.storage.DeleteFile(thumbnailURL)
+		if err := h.storage.DeleteFile(thumbnailURL); err != nil {
+			log.Printf("cleanup: failed to delete thumbnail file %s: %v", thumbnailURL, err)
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

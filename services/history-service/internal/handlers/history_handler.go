@@ -59,7 +59,7 @@ func (h *HistoryHandler) AddToHistory(w http.ResponseWriter, r *http.Request) {
 	`
 
 	var history models.WatchHistory
-	err = h.db.QueryRow(query, userID, req.VideoID).Scan(
+	err = h.db.QueryRowContext(r.Context(), query, userID, req.VideoID).Scan(
 		&history.ID, &history.UserID, &history.VideoID, &history.WatchedAt)
 
 	if err != nil {
@@ -110,7 +110,7 @@ func (h *HistoryHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 		LIMIT $2 OFFSET $3
 	`
 
-	rows, err := h.db.Query(query, userID, limit, offset)
+	rows, err := h.db.QueryContext(r.Context(), query, userID, limit, offset)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

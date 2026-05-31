@@ -38,7 +38,7 @@ func (h *CommentHandler) GetComments(w http.ResponseWriter, r *http.Request) {
 		ORDER BY c.created_at DESC
 	`
 
-	rows, err := h.db.Query(query, videoID)
+	rows, err := h.db.QueryContext(r.Context(), query, videoID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -80,7 +80,7 @@ func (h *CommentHandler) GetComment(w http.ResponseWriter, r *http.Request) {
 	`
 
 	var c models.Comment
-	err = h.db.QueryRow(query, id).Scan(&c.ID, &c.VideoID, &c.UserID, &c.Username, &c.Content, &c.CreatedAt, &c.UpdatedAt)
+	err = h.db.QueryRowContext(r.Context(), query, id).Scan(&c.ID, &c.VideoID, &c.UserID, &c.Username, &c.Content, &c.CreatedAt, &c.UpdatedAt)
 
 	if err == sql.ErrNoRows {
 		http.Error(w, "Comment not found", http.StatusNotFound)
@@ -128,7 +128,7 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		RETURNING id, created_at, updated_at
 	`
 
-	err = h.db.QueryRow(query, c.VideoID, c.UserID, c.Username, c.Content).Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
+	err = h.db.QueryRowContext(r.Context(), query, c.VideoID, c.UserID, c.Username, c.Content).Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -167,7 +167,7 @@ func (h *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 		RETURNING id, video_id, user_id, username, content, created_at, updated_at
 	`
 
-	err = h.db.QueryRow(query, c.Content, id).Scan(&c.ID, &c.VideoID, &c.UserID, &c.Username, &c.Content, &c.CreatedAt, &c.UpdatedAt)
+	err = h.db.QueryRowContext(r.Context(), query, c.Content, id).Scan(&c.ID, &c.VideoID, &c.UserID, &c.Username, &c.Content, &c.CreatedAt, &c.UpdatedAt)
 
 	if err == sql.ErrNoRows {
 		http.Error(w, "Comment not found", http.StatusNotFound)
@@ -228,7 +228,7 @@ func (h *CommentHandler) GetReplies(w http.ResponseWriter, r *http.Request) {
 		ORDER BY created_at ASC
 	`
 
-	rows, err := h.db.Query(query, commentID)
+	rows, err := h.db.QueryContext(r.Context(), query, commentID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -288,7 +288,7 @@ func (h *CommentHandler) CreateReply(w http.ResponseWriter, r *http.Request) {
 
 	// Verify parent comment exists and belongs to this video
 	var parentVideoID int
-	err = h.db.QueryRow(`SELECT video_id FROM comments WHERE id = $1 AND parent_id IS NULL`, commentID).Scan(&parentVideoID)
+	err = h.db.QueryRowContext(r.Context(), `SELECT video_id FROM comments WHERE id = $1 AND parent_id IS NULL`, commentID).Scan(&parentVideoID)
 	if err == sql.ErrNoRows {
 		http.Error(w, "Parent comment not found", http.StatusNotFound)
 		return
@@ -303,7 +303,7 @@ func (h *CommentHandler) CreateReply(w http.ResponseWriter, r *http.Request) {
 		RETURNING id, created_at, updated_at
 	`
 
-	err = h.db.QueryRow(query, c.VideoID, c.ParentID, c.UserID, c.Username, c.Content).Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
+	err = h.db.QueryRowContext(r.Context(), query, c.VideoID, c.ParentID, c.UserID, c.Username, c.Content).Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

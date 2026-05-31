@@ -38,7 +38,7 @@ func (h *PlanHandler) GetPlans(w http.ResponseWriter, r *http.Request) {
 		ORDER BY price ASC
 	`
 
-	rows, err := h.db.Query(query)
+	rows, err := h.db.QueryContext(r.Context(), query)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -81,7 +81,7 @@ func (h *PlanHandler) GetPlan(w http.ResponseWriter, r *http.Request) {
 	`
 
 	var p models.Plan
-	err = h.db.QueryRow(query, id).Scan(&p.ID, &p.Name, &p.Price, &p.MaxVideoQuality, &p.MaxUploadsPerMonth, &p.AdsFree, &p.CreatedAt, &p.UpdatedAt)
+	err = h.db.QueryRowContext(r.Context(), query, id).Scan(&p.ID, &p.Name, &p.Price, &p.MaxVideoQuality, &p.MaxUploadsPerMonth, &p.AdsFree, &p.CreatedAt, &p.UpdatedAt)
 
 	if err == sql.ErrNoRows {
 		http.Error(w, "Plan not found", http.StatusNotFound)
@@ -123,7 +123,7 @@ func (h *PlanHandler) CreatePlan(w http.ResponseWriter, r *http.Request) {
 		RETURNING id, name, price, max_video_quality, max_uploads_per_month, ads_free, created_at, updated_at
 	`
 
-	err := h.db.QueryRow(query, p.Name, p.Price, p.MaxVideoQuality, p.MaxUploadsPerMonth, p.AdsFree).Scan(
+	err := h.db.QueryRowContext(r.Context(), query, p.Name, p.Price, p.MaxVideoQuality, p.MaxUploadsPerMonth, p.AdsFree).Scan(
 		&p.ID, &p.Name, &p.Price, &p.MaxVideoQuality, &p.MaxUploadsPerMonth, &p.AdsFree, &p.CreatedAt, &p.UpdatedAt)
 
 	if err != nil {
@@ -172,7 +172,7 @@ func (h *PlanHandler) UpdatePlan(w http.ResponseWriter, r *http.Request) {
 		RETURNING id, name, price, max_video_quality, max_uploads_per_month, ads_free, created_at, updated_at
 	`
 
-	err = h.db.QueryRow(query, p.Name, p.Price, p.MaxVideoQuality, p.MaxUploadsPerMonth, p.AdsFree, id).Scan(
+	err = h.db.QueryRowContext(r.Context(), query, p.Name, p.Price, p.MaxVideoQuality, p.MaxUploadsPerMonth, p.AdsFree, id).Scan(
 		&p.ID, &p.Name, &p.Price, &p.MaxVideoQuality, &p.MaxUploadsPerMonth, &p.AdsFree, &p.CreatedAt, &p.UpdatedAt)
 
 	if err == sql.ErrNoRows {
@@ -235,7 +235,7 @@ func (h *PlanHandler) GetUserPlan(w http.ResponseWriter, r *http.Request) {
 	`
 
 	var p models.Plan
-	err = h.db.QueryRow(query, userID).Scan(&p.ID, &p.Name, &p.Price, &p.MaxVideoQuality, &p.MaxUploadsPerMonth, &p.AdsFree, &p.CreatedAt, &p.UpdatedAt)
+	err = h.db.QueryRowContext(r.Context(), query, userID).Scan(&p.ID, &p.Name, &p.Price, &p.MaxVideoQuality, &p.MaxUploadsPerMonth, &p.AdsFree, &p.CreatedAt, &p.UpdatedAt)
 
 	if err == sql.ErrNoRows {
 		http.Error(w, "User has no plan assigned", http.StatusNotFound)
@@ -268,7 +268,7 @@ func (h *PlanHandler) UpdateUserPlan(w http.ResponseWriter, r *http.Request) {
 
 	// Verify plan exists
 	var planExists bool
-	err = h.db.QueryRow("SELECT EXISTS(SELECT 1 FROM plans WHERE id = $1)", req.PlanID).Scan(&planExists)
+	err = h.db.QueryRowContext(r.Context(), "SELECT EXISTS(SELECT 1 FROM plans WHERE id = $1)", req.PlanID).Scan(&planExists)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -287,7 +287,7 @@ func (h *PlanHandler) UpdateUserPlan(w http.ResponseWriter, r *http.Request) {
 	`
 
 	var updatedUserID int
-	err = h.db.QueryRow(query, req.PlanID, userID).Scan(&updatedUserID)
+	err = h.db.QueryRowContext(r.Context(), query, req.PlanID, userID).Scan(&updatedUserID)
 
 	if err == sql.ErrNoRows {
 		http.Error(w, "User not found", http.StatusNotFound)

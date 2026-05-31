@@ -48,7 +48,7 @@ func (h *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request) 
 	`
 
 	var sub models.Subscription
-	err = h.db.QueryRow(query, userID, req.ChannelName).Scan(&sub.ID, &sub.UserID, &sub.ChannelName, &sub.CreatedAt)
+	err = h.db.QueryRowContext(r.Context(), query, userID, req.ChannelName).Scan(&sub.ID, &sub.UserID, &sub.ChannelName, &sub.CreatedAt)
 	if err != nil {
 		// Check if already subscribed (duplicate key constraint violation)
 		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "unique constraint") {
@@ -116,7 +116,7 @@ func (h *SubscriptionHandler) GetUserSubscriptions(w http.ResponseWriter, r *htt
 		ORDER BY created_at DESC
 	`
 
-	rows, err := h.db.Query(query, userID)
+	rows, err := h.db.QueryContext(r.Context(), query, userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -159,7 +159,7 @@ func (h *SubscriptionHandler) CheckSubscription(w http.ResponseWriter, r *http.R
 
 	var exists bool
 	query := `SELECT EXISTS(SELECT 1 FROM subscriptions WHERE user_id = $1 AND channel_name = $2)`
-	err = h.db.QueryRow(query, userID, channelName).Scan(&exists)
+	err = h.db.QueryRowContext(r.Context(), query, userID, channelName).Scan(&exists)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

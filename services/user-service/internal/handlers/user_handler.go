@@ -7,8 +7,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/aung-arata/youtube-clone/services/user-service/internal/middleware"
 	"github.com/aung-arata/youtube-clone/services/user-service/internal/models"
 	"github.com/gorilla/mux"
+	"github.com/lib/pq"
 )
 
 type UserHandler struct {
@@ -29,14 +31,13 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `
-		SELECT id, username, email, avatar, plan_id, created_at, updated_at
-		FROM users
-		WHERE id = $1
-	`
+			SELECT id, username, email, avatar, role, plan_id, created_at, updated_at
+			FROM users
+			WHERE id = $1
+		`
 
 	var u models.User
-	err = h.db.QueryRow(query, id).Scan(&u.ID, &u.Username, &u.Email, &u.Avatar, &u.PlanID, &u.CreatedAt, &u.UpdatedAt)
-
+	err = h.db.QueryRowContext(r.Context(), query, id).Scan(&u.ID, &u.Username, &u.Email, &u.Avatar, &u.Role, &u.PlanID, &u.CreatedAt, &u.UpdatedAt)
 	if err == sql.ErrNoRows {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
@@ -51,10 +52,21 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 // UpdateUser updates user profile information
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	callerID, ok := r.Context().Value(middleware.UserIDKey).(int)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	if callerID != id {
+		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -78,21 +90,23 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		UPDATE users 
 		SET username = $1, email = $2, avatar = $3, updated_at = CURRENT_TIMESTAMP
 		WHERE id = $4
-		RETURNING id, username, email, avatar, plan_id, created_at, updated_at
-	`
+			RETURNING id, username, email, avatar, role, plan_id, created_at, updated_at
+		`
 
-	err = h.db.QueryRow(query, u.Username, u.Email, u.Avatar, id).Scan(
-		&u.ID, &u.Username, &u.Email, &u.Avatar, &u.PlanID, &u.CreatedAt, &u.UpdatedAt)
+	err = h.db.QueryRowContext(r.Context(), query, u.Username, u.Email, u.Avatar, id).Scan(
+			&u.ID, &u.Username, &u.Email, &u.Avatar, &u.Role, &u.PlanID, &u.CreatedAt, &u.UpdatedAt)
 
 	if err == sql.ErrNoRows {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			http.Error(w, "Email already in use", http.StatusConflict)
+			return
+		}
+		http.Error(w, "Error updating user", http.StatusInternalServerError)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(u)
 }
 
@@ -120,7 +134,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		RETURNING id, username, email, avatar, plan_id, created_at, updated_at
 	`
 
-	err := h.db.QueryRow(query, u.Username, u.Email, u.Avatar).Scan(
+	err := h.db.QueryRowContext(r.Context(), query, u.Username, u.Email, u.Avatar).Scan(
 		&u.ID, &u.Username, &u.Email, &u.Avatar, &u.PlanID, &u.CreatedAt, &u.UpdatedAt)
 
 	if err != nil {
