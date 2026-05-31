@@ -76,5 +76,3 @@ func TestGetHistory_InvalidUserID(t *testing.T) {
 		t.Errorf("expected 400 for invalid userId, got %d", rr.Code)
 	}
 }
-
-
