@@ -10,6 +10,10 @@ import TrendingPage from './pages/TrendingPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import UploadPage from './pages/UploadPage'
+import SubscriptionsPage from './pages/SubscriptionsPage'
+import NotificationsPage from './pages/NotificationsPage'
+import PlaylistsPage from './pages/PlaylistsPage'
+import PlaylistDetailPage from './pages/PlaylistDetailPage'
 import { useAuth } from './contexts/AuthContext'
 
 function AppLayout() {
@@ -71,30 +75,13 @@ function AppLayout() {
             <Route path="/video/:id" element={<VideoPage />} />
             <Route path="/history" element={<WatchHistory userId={user?.id} />} />
             <Route path="/profile/:userId" element={<UserProfile userId={user?.id} />} />
-            <Route path="/subscriptions" element={<SubscriptionsPlaceholder />} />
+            <Route path="/subscriptions" element={<SubscriptionsPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/playlists" element={<PlaylistsPage />} />
+            <Route path="/playlists/:id" element={<PlaylistDetailPage />} />
             <Route path="/upload" element={<UploadPage />} />
           </Routes>
         </main>
-      </div>
-    </div>
-  )
-}
-
-function SubscriptionsPlaceholder() {
-  const { user } = useAuth()
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600 dark:text-gray-400">
-          Sign in to view your subscriptions
-        </div>
-      </div>
-    )
-  }
-  return (
-    <div className="flex items-center justify-center h-64">
-      <div className="text-lg text-gray-600 dark:text-gray-400">
-        No subscriptions yet. Browse videos and subscribe to channels!
       </div>
     </div>
   )

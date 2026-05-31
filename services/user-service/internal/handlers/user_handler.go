@@ -94,7 +94,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		`
 
 	err = h.db.QueryRowContext(r.Context(), query, u.Username, u.Email, u.Avatar, id).Scan(
-			&u.ID, &u.Username, &u.Email, &u.Avatar, &u.Role, &u.PlanID, &u.CreatedAt, &u.UpdatedAt)
+		&u.ID, &u.Username, &u.Email, &u.Avatar, &u.Role, &u.PlanID, &u.CreatedAt, &u.UpdatedAt)
 
 	if err == sql.ErrNoRows {
 		http.Error(w, "User not found", http.StatusNotFound)
