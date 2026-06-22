@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
-	"os/signal"
-	"syscall"
-	"time"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
+	"time"
 
 	"github.com/aung-arata/youtube-clone/services/video-service/internal/database"
 	"github.com/aung-arata/youtube-clone/services/video-service/internal/handlers"

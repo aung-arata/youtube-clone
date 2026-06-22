@@ -36,7 +36,7 @@ type LoginRequest struct {
 
 // AuthResponse represents the authentication response
 type AuthResponse struct {
-	Token string       `json:"token"`
+	Token string      `json:"token"`
 	User  models.User `json:"user"`
 }
 

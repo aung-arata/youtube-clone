@@ -490,21 +490,21 @@ func (h *UploadHandler) DeleteVideo(w http.ResponseWriter, r *http.Request) {
 // allowedCategories is the canonical set of video categories accepted by the API.
 // It must stay in sync with the CATEGORIES constant in frontend/src/pages/UploadPage.jsx.
 var allowedCategories = map[string]struct{}{
-	"Gaming":             {},
-	"Music":              {},
-	"Sports":             {},
-	"Education":          {},
-	"Entertainment":      {},
+	"Gaming":               {},
+	"Music":                {},
+	"Sports":               {},
+	"Education":            {},
+	"Entertainment":        {},
 	"Science & Technology": {},
-	"News & Politics":    {},
-	"Travel & Events":    {},
-	"Howto & Style":      {},
-	"Comedy":             {},
-	"Film & Animation":   {},
-	"Autos & Vehicles":   {},
-	"People & Blogs":     {},
-	"Pets & Animals":     {},
-	"Other":              {},
+	"News & Politics":      {},
+	"Travel & Events":      {},
+	"Howto & Style":        {},
+	"Comedy":               {},
+	"Film & Animation":     {},
+	"Autos & Vehicles":     {},
+	"People & Blogs":       {},
+	"Pets & Animals":       {},
+	"Other":                {},
 }
 
 func isAllowedCategory(cat string) bool {
