@@ -9,6 +9,7 @@ import (
 	"github.com/aung-arata/youtube-clone/services/user-service/internal/auth"
 	"github.com/aung-arata/youtube-clone/services/user-service/internal/middleware"
 	"github.com/aung-arata/youtube-clone/services/user-service/internal/models"
+	"github.com/lib/pq"
 )
 
 type AuthHandler struct {
@@ -35,7 +36,7 @@ type LoginRequest struct {
 
 // AuthResponse represents the authentication response
 type AuthResponse struct {
-	Token string       `json:"token"`
+	Token string      `json:"token"`
 	User  models.User `json:"user"`
 }
 
@@ -65,19 +66,6 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if user already exists
-	var exists bool
-	checkQuery := `SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`
-	err := h.db.QueryRow(checkQuery, req.Email).Scan(&exists)
-	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
-		return
-	}
-	if exists {
-		http.Error(w, "Email already registered", http.StatusConflict)
-		return
-	}
-
 	// Hash password
 	hashedPassword, err := auth.HashPassword(req.Password)
 	if err != nil {
@@ -93,15 +81,17 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	`
 
 	var user models.User
-	err = h.db.QueryRow(query, req.Username, req.Email, hashedPassword, req.Avatar, "user").Scan(
+	err = h.db.QueryRowContext(r.Context(), query, req.Username, req.Email, hashedPassword, req.Avatar, "user").Scan(
 		&user.ID, &user.Username, &user.Email, &user.Avatar, &user.Role, &user.PlanID, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			http.Error(w, "Email already registered", http.StatusConflict)
+			return
+		}
 		http.Error(w, "Error creating user", http.StatusInternalServerError)
 		return
 	}
-
-	// Generate JWT token
 	token, err := auth.GenerateToken(user.ID, user.Username, user.Role)
 	if err != nil {
 		http.Error(w, "Error generating token", http.StatusInternalServerError)
@@ -146,7 +136,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	var user models.User
 	var hashedPassword string
-	err := h.db.QueryRow(query, req.Email).Scan(
+	err := h.db.QueryRowContext(r.Context(), query, req.Email).Scan(
 		&user.ID, &user.Username, &user.Email, &hashedPassword, &user.Avatar, &user.Role, &user.PlanID, &user.CreatedAt, &user.UpdatedAt)
 
 	if err == sql.ErrNoRows {
@@ -227,7 +217,7 @@ func (h *AuthHandler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	`
 
 	var user models.User
-	err := h.db.QueryRow(query, userID).Scan(
+	err := h.db.QueryRowContext(r.Context(), query, userID).Scan(
 		&user.ID, &user.Username, &user.Email, &user.Avatar, &user.Role, &user.PlanID, &user.CreatedAt, &user.UpdatedAt)
 
 	if err == sql.ErrNoRows {

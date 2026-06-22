@@ -49,7 +49,7 @@ func (h *PlaylistHandler) CreatePlaylist(w http.ResponseWriter, r *http.Request)
 	`
 
 	var playlist models.Playlist
-	err = h.db.QueryRow(query, userID, req.Name, req.Description).Scan(
+	err = h.db.QueryRowContext(r.Context(), query, userID, req.Name, req.Description).Scan(
 		&playlist.ID, &playlist.UserID, &playlist.Name, &playlist.Description, &playlist.CreatedAt, &playlist.UpdatedAt)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -77,7 +77,7 @@ func (h *PlaylistHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Reques
 		ORDER BY created_at DESC
 	`
 
-	rows, err := h.db.Query(query, userID)
+	rows, err := h.db.QueryContext(r.Context(), query, userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -119,7 +119,7 @@ func (h *PlaylistHandler) GetPlaylist(w http.ResponseWriter, r *http.Request) {
 		FROM playlists
 		WHERE id = $1
 	`
-	err = h.db.QueryRow(query, playlistID).Scan(
+	err = h.db.QueryRowContext(r.Context(), query, playlistID).Scan(
 		&playlist.ID, &playlist.UserID, &playlist.Name, &playlist.Description, &playlist.CreatedAt, &playlist.UpdatedAt)
 	if err == sql.ErrNoRows {
 		http.Error(w, "Playlist not found", http.StatusNotFound)
@@ -139,7 +139,7 @@ func (h *PlaylistHandler) GetPlaylist(w http.ResponseWriter, r *http.Request) {
 		ORDER BY pv.position ASC
 	`
 
-	rows, err := h.db.Query(videoQuery, playlistID)
+	rows, err := h.db.QueryContext(r.Context(), videoQuery, playlistID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -200,7 +200,7 @@ func (h *PlaylistHandler) UpdatePlaylist(w http.ResponseWriter, r *http.Request)
 	`
 
 	var playlist models.Playlist
-	err = h.db.QueryRow(query, req.Name, req.Description, playlistID).Scan(
+	err = h.db.QueryRowContext(r.Context(), query, req.Name, req.Description, playlistID).Scan(
 		&playlist.ID, &playlist.UserID, &playlist.Name, &playlist.Description, &playlist.CreatedAt, &playlist.UpdatedAt)
 	if err == sql.ErrNoRows {
 		http.Error(w, "Playlist not found", http.StatusNotFound)
@@ -263,7 +263,7 @@ func (h *PlaylistHandler) AddVideoToPlaylist(w http.ResponseWriter, r *http.Requ
 
 	// Get next position
 	var maxPosition int
-	err = h.db.QueryRow("SELECT COALESCE(MAX(position), -1) FROM playlist_videos WHERE playlist_id = $1", playlistID).Scan(&maxPosition)
+	err = h.db.QueryRowContext(r.Context(), "SELECT COALESCE(MAX(position), -1) FROM playlist_videos WHERE playlist_id = $1", playlistID).Scan(&maxPosition)
 	if err != nil && err != sql.ErrNoRows {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -276,7 +276,7 @@ func (h *PlaylistHandler) AddVideoToPlaylist(w http.ResponseWriter, r *http.Requ
 	`
 
 	var pv models.PlaylistVideo
-	err = h.db.QueryRow(query, playlistID, req.VideoID, maxPosition+1).Scan(
+	err = h.db.QueryRowContext(r.Context(), query, playlistID, req.VideoID, maxPosition+1).Scan(
 		&pv.ID, &pv.PlaylistID, &pv.VideoID, &pv.Position, &pv.AddedAt)
 	if err != nil {
 		// Check if already in playlist

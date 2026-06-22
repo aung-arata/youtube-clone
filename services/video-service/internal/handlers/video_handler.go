@@ -150,7 +150,7 @@ func (h *VideoHandler) GetVideos(w http.ResponseWriter, r *http.Request) {
 	query += fmt.Sprintf(` ORDER BY %s LIMIT $%d OFFSET $%d`, orderClause, argIndex, argIndex+1)
 	args = append(args, limit, offset)
 
-	rows, err := h.db.Query(query, args...)
+	rows, err := h.db.QueryContext(r.Context(), query, args...)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -201,7 +201,7 @@ func (h *VideoHandler) GetVideo(w http.ResponseWriter, r *http.Request) {
 
 	var v models.Video
 	var userID sql.NullInt64
-	err = h.db.QueryRow(query, id).Scan(&v.ID, &userID, &v.Title, &v.Description, &v.URL,
+	err = h.db.QueryRowContext(r.Context(), query, id).Scan(&v.ID, &userID, &v.Title, &v.Description, &v.URL,
 		&v.Thumbnail, &v.ChannelName, &v.ChannelAvatar, &v.Visibility, &v.ProcessingStatus, &v.Views, &v.Likes, &v.Dislikes, &v.Category, &v.Duration,
 		&v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
 	if userID.Valid {
@@ -249,7 +249,7 @@ func (h *VideoHandler) CreateVideo(w http.ResponseWriter, r *http.Request) {
 		RETURNING id, uploaded_at, created_at, updated_at
 	`
 
-	err := h.db.QueryRow(query, v.Title, v.Description, v.URL, v.Thumbnail,
+	err := h.db.QueryRowContext(r.Context(), query, v.Title, v.Description, v.URL, v.Thumbnail,
 		v.ChannelName, v.ChannelAvatar, v.Duration).Scan(&v.ID, &v.UploadedAt, &v.CreatedAt, &v.UpdatedAt)
 
 	if err != nil {
@@ -279,7 +279,7 @@ func (h *VideoHandler) IncrementViews(w http.ResponseWriter, r *http.Request) {
 	`
 
 	var views int
-	err = h.db.QueryRow(query, id).Scan(&views)
+	err = h.db.QueryRowContext(r.Context(), query, id).Scan(&views)
 	if err == sql.ErrNoRows {
 		http.Error(w, "Video not found", http.StatusNotFound)
 		return
@@ -309,7 +309,7 @@ func (h *VideoHandler) LikeVideo(w http.ResponseWriter, r *http.Request) {
 	`
 
 	var likes int
-	err = h.db.QueryRow(query, id).Scan(&likes)
+	err = h.db.QueryRowContext(r.Context(), query, id).Scan(&likes)
 	if err == sql.ErrNoRows {
 		http.Error(w, "Video not found", http.StatusNotFound)
 		return
@@ -339,7 +339,7 @@ func (h *VideoHandler) DislikeVideo(w http.ResponseWriter, r *http.Request) {
 	`
 
 	var dislikes int
-	err = h.db.QueryRow(query, id).Scan(&dislikes)
+	err = h.db.QueryRowContext(r.Context(), query, id).Scan(&dislikes)
 	if err == sql.ErrNoRows {
 		http.Error(w, "Video not found", http.StatusNotFound)
 		return
@@ -361,7 +361,7 @@ func (h *VideoHandler) GetCategories(w http.ResponseWriter, r *http.Request) {
 		ORDER BY category
 	`
 
-	rows, err := h.db.Query(query)
+	rows, err := h.db.QueryContext(r.Context(), query)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -407,7 +407,7 @@ func (h *VideoHandler) GetRecommendations(w http.ResponseWriter, r *http.Request
 
 	// First, get the category of the current video
 	var category string
-	err = h.db.QueryRow("SELECT category FROM videos WHERE id = $1", id).Scan(&category)
+	err = h.db.QueryRowContext(r.Context(), "SELECT category FROM videos WHERE id = $1", id).Scan(&category)
 	if err == sql.ErrNoRows {
 		http.Error(w, "Video not found", http.StatusNotFound)
 		return
@@ -426,7 +426,7 @@ func (h *VideoHandler) GetRecommendations(w http.ResponseWriter, r *http.Request
 		LIMIT $3
 	`
 
-	rows, err := h.db.Query(query, category, id, limit)
+	rows, err := h.db.QueryContext(r.Context(), query, category, id, limit)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -484,7 +484,7 @@ func (h *VideoHandler) GetTrendingVideos(w http.ResponseWriter, r *http.Request)
 		LIMIT $1
 	`
 
-	rows, err := h.db.Query(query, limit)
+	rows, err := h.db.QueryContext(r.Context(), query, limit)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -541,7 +541,7 @@ func (h *VideoHandler) GetPopularVideos(w http.ResponseWriter, r *http.Request) 
 		LIMIT $1
 	`
 
-	rows, err := h.db.Query(query, limit)
+	rows, err := h.db.QueryContext(r.Context(), query, limit)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -606,7 +606,7 @@ func (h *VideoHandler) GetVideoAnalytics(w http.ResponseWriter, r *http.Request)
 		Engagement int     `json:"engagement"`
 	}
 
-	err = h.db.QueryRow(query, id).Scan(&analytics.ID, &analytics.Title, &analytics.Views,
+	err = h.db.QueryRowContext(r.Context(), query, id).Scan(&analytics.ID, &analytics.Title, &analytics.Views,
 		&analytics.Likes, &analytics.Dislikes, &analytics.Category, &analytics.UploadedAt)
 	if err == sql.ErrNoRows {
 		http.Error(w, "Video not found", http.StatusNotFound)

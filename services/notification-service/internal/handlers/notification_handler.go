@@ -51,7 +51,7 @@ func (h *NotificationHandler) GetUserNotifications(w http.ResponseWriter, r *htt
 	query += " ORDER BY created_at DESC LIMIT $2"
 	args = append(args, limit)
 
-	rows, err := h.db.Query(query, args...)
+	rows, err := h.db.QueryContext(r.Context(), query, args...)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -103,7 +103,7 @@ func (h *NotificationHandler) CreateNotification(w http.ResponseWriter, r *http.
 	`
 
 	var notification models.Notification
-	err := h.db.QueryRow(query, req.UserID, req.Type, req.Title, req.Message, 
+	err := h.db.QueryRowContext(r.Context(), query, req.UserID, req.Type, req.Title, req.Message, 
 		sql.NullString{String: req.Link, Valid: req.Link != ""}).
 		Scan(&notification.ID, &notification.CreatedAt)
 	if err != nil {
@@ -140,7 +140,7 @@ func (h *NotificationHandler) MarkAsRead(w http.ResponseWriter, r *http.Request)
 	`
 
 	var notificationID int
-	err = h.db.QueryRow(query, id).Scan(&notificationID)
+	err = h.db.QueryRowContext(r.Context(), query, id).Scan(&notificationID)
 	if err == sql.ErrNoRows {
 		http.Error(w, "Notification not found", http.StatusNotFound)
 		return
@@ -202,7 +202,7 @@ func (h *NotificationHandler) GetUnreadCount(w http.ResponseWriter, r *http.Requ
 	`
 
 	var count int
-	err = h.db.QueryRow(query, userID).Scan(&count)
+	err = h.db.QueryRowContext(r.Context(), query, userID).Scan(&count)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
