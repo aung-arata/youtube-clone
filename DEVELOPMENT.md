@@ -14,8 +14,7 @@ youtube-clone/
 │   ├── notification-service/   # Go — notifications, WebSocket
 │   └── admin-service/          # PHP (Symfony) — admin dashboard, CMS, reports
 ├── backend/                    # Deprecated monolith (reference only)
-├── docker-compose.microservices.yml
-└── docker-compose.yml          # Deprecated monolith compose
+└── docker-compose.yml          # Full microservices stack
 ```
 
 ## Frontend
@@ -71,7 +70,7 @@ php -S 0.0.0.0:8085 -t public/   # Dev server
 
 ```bash
 # Start only the database for the service you're working on
-docker compose -f docker-compose.microservices.yml up -d video-db
+docker compose up -d video-db
 
 # Run the service locally
 cd services/video-service
@@ -123,10 +122,10 @@ Workflow files are in `.github/workflows/`.
 **Service won't start:**
 ```bash
 # Check logs
-docker compose -f docker-compose.microservices.yml logs <service-name>
+docker compose logs <service-name>
 
 # Check all container status
-docker compose -f docker-compose.microservices.yml ps
+docker compose ps
 ```
 
 **Database connection errors:**

@@ -34,6 +34,7 @@ See [MICROSERVICES.md](MICROSERVICES.md) for details on each service.
 ```bash
 git clone https://github.com/aung-arata/youtube-clone.git
 cd youtube-clone
+cp .env.example .env   # set POSTGRES_PASSWORD
 docker compose up -d
 ```
 
@@ -78,6 +79,7 @@ docker compose up -d
 | [ENVIRONMENT.md](ENVIRONMENT.md) | Environment variables for all services |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | Per-service dev commands, testing, linting |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines and coding standards |
+| [ROADMAP.md](ROADMAP.md) | Project phases and completion status |
 | [ARCHITECTURE_COMPARISON.md](ARCHITECTURE_COMPARISON.md) | Monolith vs microservices trade-offs |
 | [FEATURE_PARITY.md](FEATURE_PARITY.md) | Feature comparison between architectures |
 | [PHP_GO_INTEGRATION_ANALYSIS.md](PHP_GO_INTEGRATION_ANALYSIS.md) | Analysis behind the hybrid tech choice |

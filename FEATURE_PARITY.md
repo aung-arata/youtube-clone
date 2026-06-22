@@ -57,23 +57,23 @@ The following features are **only available in the microservices architecture** 
 Located in `/services/admin-service/`, this is a separate Symfony 8.0 application providing administrative and content management features.
 
 #### CMS (Content Management System)
-- ❌ **Blog Posts**: Full CRUD operations, automatic slug generation, categories, publish workflow
-- ❌ **Documentation**: Organized documentation with categories and sorting
-- ❌ **Help Center**: Searchable help articles with view tracking
+- ✅ **Blog Posts**: Full CRUD operations, automatic slug generation, categories, publish workflow
+- ✅ **Documentation**: Organized documentation with categories and sorting
+- ✅ **Help Center**: Searchable help articles with view tracking
 
 #### Email System
-- ❌ **Email Templates**: Template management with variable substitution
-- ❌ **Email Logs**: Delivery tracking and history
+- ✅ **Email Templates**: Template management with variable substitution
+- ✅ **Email Logs**: Delivery tracking and history
 
 #### Reporting
-- ❌ **Analytics Reports**: Data aggregation and analytics
-- ❌ **User Activity Reports**: User behavior tracking
-- ❌ **Video Statistics**: Category-based video statistics
+- ✅ **Analytics Reports**: Data aggregation and analytics
+- ✅ **User Activity Reports**: User behavior tracking
+- ✅ **Video Statistics**: Category-based video statistics
 
 #### Admin Dashboard
-- ❌ **User Management**: Admin user roles and permissions
-- ❌ **Content Moderation**: Moderation queue and workflow
-- ❌ **System Monitoring**: Dashboard statistics and monitoring
+- ✅ **User Management**: Admin user roles and permissions
+- ✅ **Content Moderation**: Moderation queue and workflow
+- ✅ **System Monitoring**: Dashboard statistics and monitoring
 
 **Why Not in Monolith?**
 
@@ -109,11 +109,12 @@ The monolith backend directly handles all requests and doesn't need a gateway. I
 - Single database connection pool
 
 **Microservices:**
-- Four separate databases:
+- Six separate databases:
   - `video_service_db` (videos)
   - `user_service_db` (users)
   - `comment_service_db` (comments)
   - `history_service_db` (watch_history)
+  - `notification_service_db` (notifications)
   - `admin_service_db` (admin features)
 - Each service owns its data
 - Cross-service data access via HTTP APIs
@@ -149,13 +150,13 @@ docker-compose up -d
 ### Microservices
 
 ```bash
-docker-compose -f docker-compose.microservices.yml up -d
-# Starts: 
-# - 5 databases (video, user, comment, history, admin)
-# - 5 Go services (video, user, comment, history, gateway)
+docker compose up -d
+# Starts:
+# - 6 databases (video, user, comment, history, notification, admin)
+# - 6 Go services (video, user, comment, history, notification, gateway)
 # - 1 PHP service (admin)
 # - Frontend
-# Ports: 8080 (gateway), 8081-8085 (services)
+# Ports: 8080 (gateway), 8081-8086 (services)
 ```
 
 ## Choosing Between Architectures
@@ -191,6 +192,10 @@ Frontend applications can switch between architectures by simply changing the `V
 | Users | ✅ | ✅ |
 | Comments | ✅ | ✅ |
 | Watch History | ✅ | ✅ |
+| Subscriptions | ❌ | ✅ |
+| Notifications | ❌ | ✅ |
+| Playlists | ❌ | ✅ |
+| Trending Videos | ❌ | ✅ |
 | CMS (Blog, Docs, Help) | ❌ | ✅ |
 | Email Templates | ❌ | ✅ |
 | Admin Dashboard | ❌ | ✅ |

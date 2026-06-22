@@ -78,26 +78,36 @@ youtube-clone/
 │   │   ├── Dockerfile
 │   │   └── go.mod
 │   │
-│   └── history-service/               # History microservice
-│       ├── cmd/server/main.go
-│       ├── internal/
-│       │   ├── handlers/
-│       │   ├── models/
-│       │   └── database/
-│       ├── Dockerfile
-│       └── go.mod
+│   ├── history-service/               # History microservice
+│   │   ├── cmd/server/main.go
+│   │   ├── internal/
+│   │   │   ├── handlers/
+│   │   │   ├── models/
+│   │   │   └── database/
+│   │   ├── Dockerfile
+│   │   └── go.mod
+│   │
+│   ├── notification-service/          # Notification microservice [Go]
+│   │   ├── cmd/server/main.go
+│   │   ├── internal/
+│   │   └── Dockerfile
+│   │
+│   └── admin-service/                 # Admin service [PHP/Symfony]
+│       ├── src/
+│       ├── composer.json
+│       └── Dockerfile
 │
 ├── frontend/
 ├── backend/                           # Preserved for reference
-└── docker-compose.microservices.yml   # All services + 4 databases
+└── docker-compose.microservices.yml   # All services + 6 databases
 ```
 
 ### Characteristics
-- **5 Independent Services**: API Gateway + 4 domain services
-- **4 Separate Databases**: Each service owns its data
+- **7 Independent Services**: API Gateway + 5 Go domain services + 1 PHP admin service
+- **6 Separate Databases**: Each service owns its data
 - **Independent Deployment**: Deploy services individually
 - **Loosely Coupled**: Services communicate via HTTP APIs
-- **Multiple Ports**: Gateway (8080), Video (8081), User (8082), Comment (8083), History (8084)
+- **Multiple Ports**: Gateway (8080), Video (8081), User (8082), Comment (8083), History (8084), Admin (8085), Notification (8086)
 
 ### Benefits
 1. **Scalability**: Scale individual services based on demand

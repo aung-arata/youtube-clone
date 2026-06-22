@@ -10,12 +10,12 @@
 
 ## Current State
 
-✅ **100% Golang backend** with microservices architecture:
-- 5 independent services (API Gateway, Video, User, Comment, History)
-- High performance (~50K req/sec)
+✅ **Hybrid Go + PHP backend** with microservices architecture:
+- 7 independent services (API Gateway, Video, User, Comment, History, Notification [all Go] + Admin [PHP/Symfony])
+- High performance (~50K req/sec on Go services)
 - Low latency (~2ms average)
 - Excellent concurrency handling
-- Small resource footprint
+- PHP admin service for CMS, reporting, and internal tooling
 
 ---
 
@@ -196,6 +196,5 @@ If you're **hypothetically thinking** "PHP might be useful someday," stick with 
 
 ---
 
-**Last Updated**: January 19, 2026  
-**Status**: Analysis Complete - Decision Guide Ready  
-**No Code Changes**: This is analysis only, no implementation required
+**Last Updated**: June 2026  
+**Status**: Decision Made - PHP admin service implemented at `/services/admin-service/`

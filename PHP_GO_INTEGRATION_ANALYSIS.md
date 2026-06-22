@@ -4,9 +4,9 @@
 
 This document provides a comprehensive analysis of integrating PHP alongside the current Go-based microservices architecture for the YouTube Clone project. The analysis evaluates the benefits, drawbacks, use cases, and implementation considerations for a hybrid PHP + Go technology stack.
 
-**Current State**: The entire backend is built with Go (Golang) using a microservices architecture with 5 independent services.
+**Current State**: Hybrid Go + PHP backend. 6 Go services (API Gateway, Video, User, Comment, History, Notification) + 1 PHP/Symfony admin service at `/services/admin-service/`.
 
-**Proposal Under Review**: Integrate PHP for certain features while maintaining Go for performance-critical operations.
+**Decision**: PHP was adopted for the admin service. This document records the analysis that led to that decision.
 
 ---
 
@@ -665,6 +665,6 @@ The decision to integrate PHP with Go should be **data-driven and use-case-speci
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: January 19, 2026  
-**Status**: Analysis Complete - No Code Changes Required
+**Document Version**: 1.1  
+**Last Updated**: June 2026  
+**Status**: Decision Implemented — PHP admin service live at `/services/admin-service/`
