@@ -9,21 +9,21 @@
         "ext-iconv": "*",
         "ext-pdo": "*",
         "ext-pdo_pgsql": "*",
-        "symfony/console": "7.3.*",
-        "symfony/dotenv": "7.3.*",
+        "symfony/console": "8.1.*",
+        "symfony/dotenv": "8.1.*",
         "symfony/flex": "^2",
-        "symfony/framework-bundle": "7.3.*",
-        "symfony/runtime": "7.3.*",
-        "symfony/yaml": "7.3.*",
-        "symfony/http-client": "7.3.*",
+        "symfony/framework-bundle": "8.1.*",
+        "symfony/runtime": "8.1.*",
+        "symfony/yaml": "8.1.*",
+        "symfony/http-client": "8.1.*",
         "symfony/orm-pack": "*",
         "symfony/maker-bundle": "^1.0",
-        "symfony/twig-bundle": "7.3.*",
-        "symfony/form": "7.3.*",
-        "symfony/validator": "7.3.*",
-        "symfony/mailer": "7.3.*",
-        "doctrine/doctrine-bundle": "^2.13",
-        "doctrine/orm": "^3.3"
+        "symfony/twig-bundle": "8.1.*",
+        "symfony/form": "8.1.*",
+        "symfony/validator": "8.1.*",
+        "symfony/mailer": "8.1.*",
+        "doctrine/doctrine-bundle": "^3.2",
+        "doctrine/orm": "^3.6"
     },
     "require-dev": {
     },
@@ -36,13 +36,7 @@
         "sort-packages": true,
         "optimize-autoloader": true,
         "audit": {
-            "ignore": [
-                "PKSA-py8y-z9q7-q197",
-                "PKSA-v5yj-8nmz-sk2q",
-                "PKSA-ft77-7h5f-p3r6",
-                "PKSA-b14r-zh1d-vdrc",
-                "PKSA-28rh-rzzn-djk4"
-            ]
+            "ignore": []
         }
     },
     "autoload": {
@@ -83,7 +77,7 @@
     "extra": {
         "symfony": {
             "allow-contrib": false,
-            "require": "7.3.*"
+            "require": "8.1.*"
         }
     }
 }
