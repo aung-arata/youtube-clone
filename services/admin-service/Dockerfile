@@ -1,6 +1,6 @@
 # Symfony Admin Service Dockerfile
 
-FROM php:8.2-cli AS base
+FROM php:8.4-cli AS base
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
