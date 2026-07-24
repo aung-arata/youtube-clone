@@ -245,6 +245,7 @@ services:
       - comment-service
       - history-service
       - notification-service
+      - otel-collector    # add this
     networks:
       - microservices_network
     restart: unless-stopped

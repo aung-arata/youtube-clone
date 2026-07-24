@@ -3,6 +3,7 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	// otel core - the API layer, defines interfaces
@@ -27,58 +28,73 @@ import (
 
 func InitTracer(serviceName string) (func(context.Context) error, error) {
 
-	// Create a gRPC connection to the OTel Collector
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	// ===== BOILERPLATE =====
+	// Separate context just for dialing - short timeout is fine
+	// Do not reuse this ctx for exporter or resource
+	dialCtx, dialCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer dialCancel()
 
+	// ===== BOILERPLATE =====
+	// gRPC connection to collector - only address changes per environment
+	// ===== PROJECT SPECIFIC =====
+	// "otel-collector:4317" - change this if collector has different host/port
 	conn, err := grpc.DialContext(
-		ctx,
+		dialCtx,
 		"otel-collector:4317",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to otel collector: %w", err)
 	}
 
-	// Create the OTLP exporter using that connection
-	exporter, err := otlptracegrpc.New(ctx,
+	// ===== BOILERPLATE =====
+	// Exporter uses background context - not tied to dial timeout
+	exporter, err := otlptracegrpc.New(context.Background(),
 		otlptracegrpc.WithGRPCConn(conn),
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create otlp exporter: %w", err)
 	}
 
-	// Create a Resource
-	res, err := resource.New(ctx,
+	// ===== BOILERPLATE =====
+	// Resource uses background context too
+	// ===== PROJECT SPECIFIC =====
+	// serviceName is what appears in Jaeger UI dropdown
+	// pass it from main() so each service has its own name
+	res, err := resource.New(context.Background(),
 		resource.WithAttributes(
 			semconv.ServiceName(serviceName),
 		),
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create resource: %w", err)
 	}
 
-	// Create the TraceProvider
+	// ===== BOILERPLATE =====
+	// TracerProvider wires everything together
+	// ===== PROJECT SPECIFIC =====
+	// AlwaysSample = 100% sampling, fine for dev
+	// In production change to sdktrace.TraceIDRatioBased(0.1) for 10%
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(res),
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 	)
 
-	// Register TraceProvider globally
+	// ===== BOILERPLATE =====
+	// Register globally - do not change these two blocks
 	otel.SetTracerProvider(tp)
 
-	// Register W3C propagator globally
 	otel.SetTextMapPropagator(
 		propagation.NewCompositeTextMapPropagator(
 			propagation.TraceContext{},
 			propagation.Baggage{},
 		),
 	)
+
+	// ===== BOILERPLATE =====
+	// Confirm tracer initialized - helpful for debugging startup
+	log.Printf("Tracer initialized successfully")
 
 	return tp.Shutdown, nil
 }
