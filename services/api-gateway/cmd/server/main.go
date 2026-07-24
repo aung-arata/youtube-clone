@@ -2,19 +2,28 @@ package main
 
 import (
 	"context"
-	"os/signal"
-	"syscall"
-	"time"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/aung-arata/youtube-clone/services/api-gateway/internal/docs"
 	"github.com/aung-arata/youtube-clone/services/api-gateway/internal/middleware"
+
+	// ===== BOILERPLATE =====
+	// add your telemetry package
+	"github.com/aung-arata/youtube-clone/services/api-gateway/internal/telemetry"
 	"github.com/gorilla/mux"
+
+	// ===== BOILERPLATE =====
+	// needed for context propagation injection in proxyToService
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 var (
@@ -26,6 +35,17 @@ var (
 )
 
 func main() {
+	// ===== BOILERPLATE =====
+	// Initialize tracer first, before anything else.
+	// Non-fatal - app still works if telemetry is unavailable.
+	shutdown, err := telemetry.InitTracer("api-gateway")
+	if err != nil {
+		log.Printf("Warning: failed to initialize tracer: %v", err)
+	} else {
+		// Flush remaining spans when main() exits
+		defer shutdown(context.Background())
+	}
+
 	r := mux.NewRouter()
 
 	// API routes
@@ -69,6 +89,11 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"ok","service":"api-gateway"}`))
 	}).Methods("GET")
+
+	// ===== BOILERPLATE =====
+	// Middleware order matters - tracing must be first
+	// so it wraps all other middleware and handlers
+	r.Use(middleware.TracingMiddleware) // add this line
 
 	// Enable CORS
 	r.Use(corsMiddleware)
@@ -133,6 +158,16 @@ func proxyToService(serviceURL, pathPrefix string) http.HandlerFunc {
 				proxyReq.Header.Add(key, value)
 			}
 		}
+
+		// ===== BOILERPLATE =====
+		// Inject trace context into outgoing request headers.
+		// This writes traceparent header so downstream service
+		// knows it belongs to the same trace.
+		// r.Context() contains the active span from TracingMiddleware.
+		otel.GetTextMapPropagator().Inject(
+			r.Context(),
+			propagation.HeaderCarrier(proxyReq.Header),
+		)
 
 		// Send request to target service
 		client := &http.Client{}
