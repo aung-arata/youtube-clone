@@ -128,6 +128,7 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: video_service_db
       PORT: 8081
+      JWT_SECRET: ${JWT_SECRET:-youtube-clone-secret-key-change-in-production}
     ports:
       - "8081:8081"
     depends_on:
@@ -149,6 +150,7 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: user_service_db
       PORT: 8082
+      JWT_SECRET: ${JWT_SECRET:-youtube-clone-secret-key-change-in-production}
     ports:
       - "8082:8082"
     depends_on:
@@ -237,6 +239,7 @@ services:
       HISTORY_SERVICE_URL: http://history-service:8084
       NOTIFICATION_SERVICE_URL: http://notification-service:8086
       PORT: 8080
+      JWT_SECRET: ${JWT_SECRET:-youtube-clone-secret-key-change-in-production}
     ports:
       - "8080:8080"
     depends_on:

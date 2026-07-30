@@ -4,13 +4,14 @@ All services are configured via environment variables. In Docker Compose these a
 
 ## Root `.env` (required for Docker Compose)
 
-Copy `.env.example` to `.env` and set a strong password:
+Copy `.env.example` to `.env` and set secret values:
 
 ```env
 POSTGRES_PASSWORD=your_strong_password_here
+JWT_SECRET=your_jwt_secret_key_here
 ```
 
-This single variable is shared by all database and service containers.
+These variables are shared across microservice containers.
 
 ## API Gateway (port 8080)
 
